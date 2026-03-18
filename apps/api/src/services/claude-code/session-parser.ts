@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
+import { readdirSync, statSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import { createReadStream } from 'node:fs'
@@ -88,19 +88,20 @@ export async function parseSessionMessages(filePath: string, startOffset = 0): P
     if (!line.trim()) continue
     try {
       const record = JSON.parse(line)
-      if (record.type === 'message' && record.message) {
+      // Claude Code JSONL uses type:"user" or type:"assistant" (not "message")
+      if ((record.type === 'assistant' || record.type === 'user') && record.message) {
         const msg = record.message
         const sessionMsg: SessionMessage = {
-          role: msg.role ?? 'unknown',
+          role: msg.role ?? record.type,
           model: msg.model,
           timestamp: record.timestamp,
         }
         if (msg.usage) {
           sessionMsg.usage = {
-            input: msg.usage.input ?? 0,
-            output: msg.usage.output ?? 0,
-            cacheRead: msg.usage.cacheRead ?? 0,
-            cacheWrite: msg.usage.cacheWrite ?? 0,
+            input: msg.usage.input_tokens ?? 0,
+            output: msg.usage.output_tokens ?? 0,
+            cacheRead: msg.usage.cache_read_input_tokens ?? 0,
+            cacheWrite: msg.usage.cache_creation_input_tokens ?? 0,
           }
         }
         // Detect tool calls (Agent tool = subagent spawning)

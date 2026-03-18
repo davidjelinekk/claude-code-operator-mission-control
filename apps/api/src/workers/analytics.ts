@@ -8,29 +8,40 @@ import { eq, and } from 'drizzle-orm'
 import { redis } from '../lib/redis.js'
 import { config } from '../config.js'
 
-interface TokenUsage {
-  input?: number
-  output?: number
-  cacheRead?: number
-  cacheWrite?: number
-  cost?: { total?: number }
+// Anthropic API pricing per 1M tokens (as of 2025)
+const MODEL_PRICING: Record<string, { input: number; output: number; cacheRead: number; cacheWrite: number }> = {
+  'claude-opus-4-6':   { input: 15,  output: 75,  cacheRead: 1.5,  cacheWrite: 18.75 },
+  'claude-sonnet-4-6': { input: 3,   output: 15,  cacheRead: 0.3,  cacheWrite: 3.75 },
+  'claude-haiku-4-5':  { input: 0.8, output: 4,   cacheRead: 0.08, cacheWrite: 1 },
 }
 
-interface MessagePayload {
-  role?: string
-  model?: string
-  provider?: string
-  usage?: TokenUsage
+function estimateCost(model: string, input: number, output: number, cacheRead: number, cacheWrite: number): number {
+  // Try exact match, then prefix match
+  const pricing = MODEL_PRICING[model]
+    ?? Object.entries(MODEL_PRICING).find(([k]) => model.startsWith(k))?.[1]
+    ?? MODEL_PRICING['claude-sonnet-4-6'] // fallback
+  return (
+    (input * pricing.input +
+      output * pricing.output +
+      cacheRead * pricing.cacheRead +
+      cacheWrite * pricing.cacheWrite) / 1_000_000
+  )
 }
 
+// Claude Code JSONL format — actual record shape
 interface JsonlRecord {
   type?: string
   timestamp?: string
-  message?: MessagePayload
-}
-
-function decodeProjectPath(encodedName: string): string {
-  return encodedName.replace(/-/g, '/')
+  message?: {
+    role?: string
+    model?: string
+    usage?: {
+      input_tokens?: number
+      output_tokens?: number
+      cache_read_input_tokens?: number
+      cache_creation_input_tokens?: number
+    }
+  }
 }
 
 async function getWatermark(agentId: string, sessionId: string): Promise<number> {
@@ -64,21 +75,27 @@ async function processFile(projectId: string, sessionId: string, filePath: strin
     try {
       const record = JSON.parse(line) as JsonlRecord
       const msg = record.message
-      if (record.type === 'message' && msg?.role === 'assistant' && msg.usage) {
+      // Claude Code uses type:"assistant" (not "message")
+      if (record.type === 'assistant' && msg?.role === 'assistant' && msg.usage) {
         const u = msg.usage
-        const costTotal = u.cost?.total ?? 0
+        const inputTokens = u.input_tokens ?? 0
+        const outputTokens = u.output_tokens ?? 0
+        const cacheReadTokens = u.cache_read_input_tokens ?? 0
+        const cacheWriteTokens = u.cache_creation_input_tokens ?? 0
+        const model = msg.model ?? 'unknown'
+        const costUsd = estimateCost(model, inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens)
         const ts = record.timestamp ? new Date(record.timestamp) : new Date()
 
         events.push({
           agentId: projectId,
           sessionId,
-          provider: msg.provider ?? 'anthropic',
-          modelId: msg.model ?? 'unknown',
-          inputTokens: u.input ?? 0,
-          outputTokens: u.output ?? 0,
-          cacheReadTokens: u.cacheRead ?? 0,
-          cacheWriteTokens: u.cacheWrite ?? 0,
-          costUsd: costTotal.toFixed(8),
+          provider: 'anthropic',
+          modelId: model,
+          inputTokens,
+          outputTokens,
+          cacheReadTokens,
+          cacheWriteTokens,
+          costUsd: costUsd.toFixed(8),
           turnTimestamp: ts,
         })
       }
