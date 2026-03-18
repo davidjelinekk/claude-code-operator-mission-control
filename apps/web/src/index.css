@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 215 28% 7%;
+    --foreground: 210 17% 94%;
+    --card: 215 28% 9%;
+    --card-foreground: 210 17% 94%;
+    --popover: 215 28% 9%;
+    --popover-foreground: 210 17% 94%;
+    --primary: 212 100% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 20% 13%;
+    --secondary-foreground: 210 17% 94%;
+    --muted: 215 20% 13%;
+    --muted-foreground: 215 9% 56%;
+    --accent: 215 20% 13%;
+    --accent-foreground: 210 17% 94%;
+    --destructive: 4 86% 63%;
+    --destructive-foreground: 210 17% 94%;
+    --border: 215 14% 20%;
+    --input: 215 14% 20%;
+    --ring: 212 100% 67%;
+    --radius: 0rem;
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    @apply border-[#30363d];
+  }
+
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: rgba(88, 166, 255, 0.25);
+    color: #e6edf3;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0d1117;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #30363d;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #6e7681;
+  }
+
+  *:focus-visible {
+    outline: 1px solid #58a6ff;
+    outline-offset: -1px;
+  }
+}
