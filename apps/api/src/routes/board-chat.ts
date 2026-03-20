@@ -3,9 +3,8 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { db } from '../db/client.js'
 import { boards, activityEvents } from '../db/schema.js'
-import { and, asc, desc, eq } from 'drizzle-orm'
-import { spawnAgentSession } from '../services/claude-code/agent-sdk-client.js'
-import { config } from '../config.js'
+import { and, asc, eq } from 'drizzle-orm'
+import { sessionManager } from '../services/claude-code/agent-sdk-client.js'
 
 const router = new Hono()
 
@@ -35,27 +34,21 @@ router.post(
     const [board] = await db.select().from(boards).where(eq(boards.id, boardId))
     if (!board) return c.json({ error: 'Not found' }, 404)
 
-    if (board.gatewayAgentId) {
-      const history = await db
-        .select()
-        .from(activityEvents)
-        .where(and(eq(activityEvents.boardId, boardId), eq(activityEvents.eventType, 'board.chat')))
-        .orderBy(desc(activityEvents.createdAt))
-        .limit(10)
-
-      history.reverse()
-
-      let messageWithContext = message
-      if (history.length > 0) {
-        const lines = history
-          .map((e) => `${e.agentId ? 'agent' : 'user'}: ${e.message}`)
-          .join('\n')
-        messageWithContext = `[Prior conversation:]\n${lines}\n[Current message:] ${message}`
-      }
-
-      if (config.ANTHROPIC_API_KEY) {
-        await spawnAgentSession({ prompt: messageWithContext }).catch(() => {})
-      }
+    if (
+      board.gatewayAgentId &&
+      sessionManager.getStatus().available &&
+      !sessionManager.hasActiveSessionFor(boardId, 'board-chat')
+    ) {
+      // Context injection (history, board memory, knowledge graph) is handled
+      // automatically at spawn time via the context retriever (Phase 3).
+      sessionManager.spawn({
+        prompt: message,
+        callerContext: 'board-chat',
+        boardId,
+        agent: board.gatewayAgentId,
+        maxTurns: 5,
+        permissionMode: 'plan',
+      }).catch(() => {})
     }
 
     await db.insert(activityEvents).values({

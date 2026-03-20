@@ -65,7 +65,7 @@ function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between pb-4 mb-5 border-b border-[#21262d]">
         <h1 className="font-mono text-[13px] font-semibold text-[#e6edf3] tracking-wide uppercase flex items-center gap-2">
-          <span className="text-[#58a6ff]">~/</span>mission control
+          <span className="text-[#58a6ff]">~/</span>cc_operator
         </h1>
         <span className="font-mono text-[11px] text-[#6e7681]">last 30 days</span>
       </div>

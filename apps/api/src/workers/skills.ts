@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { db } from '../db/client.js'
 import { skillSnapshots } from '../db/schema.js'
 import { config } from '../config.js'
+import { discoverScripts } from '../services/claude-code/script-discovery.js'
 
 interface SkillEntry {
   skillId: string
@@ -103,6 +104,34 @@ async function runRefresh(): Promise<void> {
     }
   } catch (e) {
     console.error('[skills] failed to read settings.json MCP servers:', e)
+  }
+
+  // Scan CLI scripts
+  try {
+    const scripts = discoverScripts()
+    for (const script of scripts) {
+      entries.push({
+        skillId: `script:${script.id}`,
+        displayName: script.name,
+        description: script.description,
+        skillType: 'cli_script',
+        isInstalled: true,
+        configJson: {
+          entrypoint: script.entrypoint,
+          interpreter: script.interpreter,
+          inputMode: script.inputMode,
+          outputMode: script.outputMode,
+          timeout: script.timeout,
+          argsSchema: script.argsSchema,
+          tags: script.tags,
+          executablePath: script.executablePath,
+        },
+        requiredEnv: script.requiredEnv,
+        dependencies: [],
+      })
+    }
+  } catch (e) {
+    console.error('[skills] failed to scan CLI scripts:', e)
   }
 
   for (const entry of entries) {

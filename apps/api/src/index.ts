@@ -16,6 +16,8 @@ import hooksRouter from './routes/hooks.js'
 import mcpServersRouter from './routes/mcp-servers.js'
 import agentFilesRouter from './routes/agent-files.js'
 import skillFilesRouter from './routes/skill-files.js'
+import scriptsRouter from './routes/scripts.js'
+import scriptFilesRouter from './routes/script-files.js'
 import sessionsRouter from './routes/sessions.js'
 import skillsRouter from './routes/skills.js'
 import cronRouter from './routes/cron.js'
@@ -31,6 +33,7 @@ import customFieldsRouter from './routes/custom-fields.js'
 import taskPlanningRouter, { taskPlanningCallbackRouter } from './routes/task-planning.js'
 import skillPacksRouter from './routes/skill-packs.js'
 import authRouter from './routes/auth.js'
+import agentBusRouter from './routes/agent-bus.js'
 import searchRouter from './routes/search.js'
 import webhooksRouter from './routes/webhooks.js'
 import systemRouter from './routes/system.js'
@@ -40,6 +43,12 @@ import { createFlowWsHandler } from './ws/flow.js'
 import { analyticsIngestWorker } from './workers/analytics.js'
 import { skillsRefreshWorker } from './workers/skills.js'
 import { flowTailWorker } from './workers/flow.js'
+import { embeddingWorker } from './workers/embedding.js'
+import { extractionWorker } from './workers/extraction.js'
+import { claudeMemSyncWorker } from './workers/claude-mem-sync.js'
+import { sessionManager } from './services/claude-code/agent-sdk-client.js'
+import semanticSearchRouter from './routes/semantic-search.js'
+import contextGraphRouter from './routes/context-graph.js'
 
 const app = new Hono()
 
@@ -65,6 +74,8 @@ app.route('/api/hooks', hooksRouter)
 app.route('/api/mcp-servers', mcpServersRouter)
 app.route('/api/agent-files', agentFilesRouter)
 app.route('/api/skill-files', skillFilesRouter)
+app.route('/api/scripts', scriptsRouter)
+app.route('/api/script-files', scriptFilesRouter)
 app.route('/api/sessions', sessionsRouter)
 app.route('/api/skills', skillsRouter)
 app.route('/api/cron', cronRouter)
@@ -79,7 +90,10 @@ app.route('/api/board-groups', boardGroupsRouter)
 app.route('/api/custom-fields', customFieldsRouter)
 app.route('/api', taskPlanningRouter)
 app.route('/api/skill-packs', skillPacksRouter)
+app.route('/api/agent-bus', agentBusRouter)
 app.route('/api/search', searchRouter)
+app.route('/api/search', semanticSearchRouter)
+app.route('/api/context-graph', contextGraphRouter)
 app.route('/api/webhooks', webhooksRouter)
 app.route('/api/system', systemRouter)
 app.route('/api/task-templates', taskTemplatesRouter)
@@ -115,10 +129,16 @@ async function start(): Promise<void> {
   skillsRefreshWorker.run().catch(() => {})
   analyticsIngestWorker.run().catch(() => {})
   setTimeout(() => flowTailWorker.run().catch(() => {}), 5000)
+  embeddingWorker.run().catch(() => {})
+  extractionWorker.run().catch(() => {})
+  claudeMemSyncWorker.run().catch(() => {})
 
   // Periodic workers
   setInterval(() => analyticsIngestWorker.run().catch(() => {}), 5 * 60 * 1000)
   setInterval(() => flowTailWorker.run().catch(() => {}), 2 * 60 * 1000)
+  setInterval(() => embeddingWorker.run().catch(() => {}), 60 * 1000)
+  setInterval(() => extractionWorker.run().catch(() => {}), 3 * 60 * 1000)
+  setInterval(() => claudeMemSyncWorker.run().catch(() => {}), 5 * 60 * 1000)
 
   const server = serve({ fetch: app.fetch, port: config.PORT }) as unknown as import('node:http').Server
 
@@ -154,6 +174,16 @@ async function start(): Promise<void> {
     socket.write('HTTP/1.1 404 Not Found\r\n\r\n')
     socket.destroy()
   })
+
+  // Graceful shutdown: clean up sessions and connections
+  const shutdown = () => {
+    console.log('[claude-code-operator] shutting down...')
+    sessionManager.destroy()
+    server.close()
+    process.exit(0)
+  }
+  process.on('SIGTERM', shutdown)
+  process.on('SIGINT', shutdown)
 
   console.log(`[claude-code-operator] API running on http://localhost:${config.PORT}`)
 }

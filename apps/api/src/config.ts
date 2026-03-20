@@ -10,6 +10,9 @@ const EnvSchema = z.object({
   CLAUDE_HOME: z.string().default(join(homedir(), '.claude')),
   ANTHROPIC_API_KEY: z.string().default(''),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  EMBEDDING_PROVIDER: z.enum(['ollama']).default('ollama'),
+  EMBEDDING_BASE_URL: z.string().default('http://localhost:11434'),
+  EMBEDDING_MODEL: z.string().default('nomic-embed-text'),
 })
 
 const raw = EnvSchema.parse(process.env)

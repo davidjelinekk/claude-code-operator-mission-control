@@ -6,7 +6,7 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "postbuild": "cp -r ../web/dist ./web-dist || true",
+    "postbuild": "cp src/services/claude-code/script-mcp-wrapper.mjs dist/services/claude-code/ && cp -r ../web/dist ./web-dist || true",
     "dev": "node --env-file=.env --import=tsx/esm --watch src/index.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:generate": "drizzle-kit generate",
@@ -14,9 +14,10 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.77",
+    "@claude-code-operator/shared-types": "workspace:*",
     "@hono/node-server": "^1.14.1",
     "@hono/zod-validator": "^0.7.6",
-    "@claude-code-operator/shared-types": "workspace:*",
     "bullmq": "^5.53.3",
     "drizzle-orm": "^0.41.0",
     "hono": "^4.7.10",

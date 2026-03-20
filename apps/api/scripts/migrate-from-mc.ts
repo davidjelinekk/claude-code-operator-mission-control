@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * One-shot migration script: Mission Control → claude-code-operator
+ * One-shot migration script: legacy databases → cc_operator
  *
- * Clears all migratable oc_operator tables, then bulk-inserts from mission_control.
+ * Clears all migratable cc_operator tables, then bulk-inserts from the legacy database.
  * Run from repo root:
  *   node apps/api/node_modules/.bin/tsx apps/api/scripts/migrate-from-mc.ts
  */
@@ -15,7 +15,7 @@ const MC_URL = 'postgresql://localhost:5432/mission_control'
 const OC_URL = 'postgresql://localhost:5432/oc_operator'
 const OPENCLAW_JSON = join(homedir(), '.openclaw', 'openclaw.json')
 
-// Build uuid → openclaw-text-id map from openclaw.json
+// Build uuid → text-id map from legacy config
 function buildAgentMap(): Map<string, string> {
   const config = JSON.parse(readFileSync(OPENCLAW_JSON, 'utf-8'))
   const agentsList: Array<{ id: string; name?: string }> = config.agents?.list ?? []
@@ -46,8 +46,8 @@ async function run() {
   const oc = postgres(OC_URL, { max: 1 })
 
   try {
-    // ---- Clear oc_operator tables (FK-safe order) ----
-    console.log('\nClearing oc_operator tables...')
+    // ---- Clear target tables (FK-safe order) ----
+    console.log('\nClearing target tables...')
     await oc`DELETE FROM task_custom_field_values`
     await oc`DELETE FROM task_tags`
     await oc`DELETE FROM task_dependencies`

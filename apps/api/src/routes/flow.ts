@@ -6,6 +6,7 @@ import { agentFlowEdges, tasks, boards } from '../db/schema.js'
 import { gte, desc, isNotNull, and, eq } from 'drizzle-orm'
 import { config } from '../config.js'
 import { discoverAgents } from '../services/claude-code/agent-discovery.js'
+import { sessionManager } from '../services/claude-code/agent-sdk-client.js'
 
 export const flowRouter = new Hono()
 
@@ -88,19 +89,26 @@ flowRouter.get('/graph', async (c) => {
     participatingIds.add(e.toAgentId)
   }
 
-  // Enrich nodes: all known agents + highlight those with edges
+  // Enrich nodes: all known agents + highlight those with edges + active sessions
   const agentMeta = await loadAgentMeta()
+  const activeSessions = sessionManager.getActiveSessions()
 
   const allAgentIds = new Set([...participatingIds, ...agentMeta.keys()])
   const nodes = [...allAgentIds].map((id) => {
     const meta = agentMeta.get(id)
     const fallbackName = id === 'system' ? 'System' : id.length > 24 ? `${id.slice(0, 8)}…` : id
+    const agentActiveSessions = activeSessions.filter(
+      (s) => s.meta.callerContext && s.meta.boardId,
+    ).length
     return {
       id,
       name: meta?.name ?? fallbackName,
       emoji: meta?.emoji ?? (id === 'system' ? '⚡' : null),
       isOnline: meta?.isOnline ?? false,
-      hasActiveSession: meta?.hasActiveSession ?? false,
+      hasActiveSession: activeSessions.some(
+        (s) => s.meta.callerContext === id || s.meta.boardId === id,
+      ),
+      activeSessionCount: agentActiveSessions,
       hasEdges: participatingIds.has(id),
     }
   })

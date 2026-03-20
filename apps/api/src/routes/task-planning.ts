@@ -5,7 +5,7 @@ import { db } from '../db/client.js'
 import { taskPlanningSessions, tasks, boards } from '../db/schema.js'
 import { eq, and, desc } from 'drizzle-orm'
 import { config } from '../config.js'
-import { spawnAgentSession } from '../services/claude-code/agent-sdk-client.js'
+import { sessionManager } from '../services/claude-code/agent-sdk-client.js'
 
 const router = new Hono()
 
@@ -128,8 +128,23 @@ Description: ${task.description ?? '(not provided)'}
 You are a planning agent. Ask 3-5 focused questions to clarify this task. Ask one at a time with multiple-choice options where possible. When done, POST your final spec back to: ${callbackUrl}`
 
   // Spawn planning via Agent SDK if available
-  if (config.ANTHROPIC_API_KEY) {
-    spawnAgentSession({ prompt }).catch(() => {})
+  if (sessionManager.getStatus().available) {
+    try {
+      const spawnResult = await sessionManager.spawn({
+        prompt,
+        callerContext: 'task-planning',
+        boardId: board.id,
+        taskId,
+        persistSession: true,
+      })
+      // Store the SDK session ID so we can resume later with follow-up answers
+      await db
+        .update(taskPlanningSessions)
+        .set({ sessionKey: spawnResult.sessionId })
+        .where(eq(taskPlanningSessions.id, session.id))
+    } catch {
+      // Agent spawn failure is non-blocking
+    }
   }
 
   return c.json(session, 201)
@@ -156,9 +171,19 @@ router.post(
       { role: 'user', content: answer, timestamp: new Date().toISOString() },
     ]
 
-    // Send follow-up via Agent SDK if available
-    if (config.ANTHROPIC_API_KEY && session.sessionKey) {
-      spawnAgentSession({ prompt: answer }).catch(() => {})
+    // Send follow-up via Agent SDK — resume existing session if we have a sessionKey
+    if (sessionManager.getStatus().available && session.sessionKey) {
+      try {
+        await sessionManager.spawn({
+          prompt: answer,
+          resume: session.sessionKey,
+          callerContext: 'task-planning',
+          boardId: session.boardId,
+          taskId,
+        })
+      } catch {
+        // Agent spawn failure is non-blocking
+      }
     }
 
     const [updated] = await db

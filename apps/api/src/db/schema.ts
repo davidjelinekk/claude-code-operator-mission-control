@@ -5,12 +5,21 @@ import {
   jsonb,
   pgTable,
   primaryKey,
+  real,
   smallint,
   text,
   timestamp,
   unique,
   uuid,
 } from 'drizzle-orm/pg-core'
+import { customType } from 'drizzle-orm/pg-core'
+
+// pgvector column type (768-dim for nomic-embed-text)
+export const vector = customType<{ data: string; driverData: string }>({
+  dataType() { return 'vector(768)' },
+  toDriver(value: string) { return value },
+  fromDriver(value: unknown) { return value as string },
+})
 
 // ---- board groups ----
 export const boardGroups = pgTable('board_groups', {
@@ -429,3 +438,125 @@ export const skillPacks = pgTable('skill_packs', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
+
+// ---- embeddings (Phase 1: pgvector) ----
+export const embeddings = pgTable(
+  'embeddings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sourceTable: text('source_table').notNull(),
+    sourceId: text('source_id').notNull(),
+    content: text('content').notNull(),
+    embedding: vector('embedding'),
+    metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('uq_embeddings_source').on(t.sourceTable, t.sourceId),
+    index('idx_embeddings_source').on(t.sourceTable, t.sourceId),
+  ],
+)
+
+// ---- context graph (Phase 2) ----
+export const ctxEntities = pgTable(
+  'ctx_entities',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    entityType: text('entity_type').notNull(),
+    description: text('description'),
+    abstract: text('abstract'),
+    properties: jsonb('properties').$type<Record<string, unknown>>(),
+    boardId: uuid('board_id').references(() => boards.id, { onDelete: 'set null' }),
+    confidence: real('confidence').default(1.0),
+    sourceType: text('source_type').notNull().default('extraction'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('idx_ctx_entities_type_board').on(t.entityType, t.boardId),
+    index('idx_ctx_entities_name').on(t.name, t.entityType),
+  ],
+)
+
+export const ctxRelations = pgTable(
+  'ctx_relations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    fromEntityId: uuid('from_entity_id').notNull().references(() => ctxEntities.id, { onDelete: 'cascade' }),
+    toEntityId: uuid('to_entity_id').notNull().references(() => ctxEntities.id, { onDelete: 'cascade' }),
+    relationType: text('relation_type').notNull(),
+    properties: jsonb('properties').$type<Record<string, unknown>>(),
+    sourceEventId: uuid('source_event_id').references(() => activityEvents.id, { onDelete: 'set null' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    unique('uq_ctx_relation').on(t.fromEntityId, t.toEntityId, t.relationType),
+    index('idx_ctx_relations_from').on(t.fromEntityId, t.relationType),
+    index('idx_ctx_relations_to').on(t.toEntityId, t.relationType),
+  ],
+)
+
+export const ctxObservations = pgTable(
+  'ctx_observations',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    entityId: uuid('entity_id').notNull().references(() => ctxEntities.id, { onDelete: 'cascade' }),
+    content: text('content').notNull(),
+    abstract: text('abstract'),
+    observationType: text('observation_type').default('fact'),
+    source: text('source').default('session'),
+    sourceId: text('source_id'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('idx_ctx_observations_entity').on(t.entityId, t.createdAt),
+  ],
+)
+
+export const ctxExtractionWatermarks = pgTable('ctx_extraction_watermarks', {
+  eventType: text('event_type').primaryKey(),
+  lastEventAt: timestamp('last_event_at', { withTimezone: true }),
+  lastProcessedAt: timestamp('last_processed_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+// ---- agent messages (inter-agent communication bus) ----
+export const agentMessages = pgTable(
+  'agent_messages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    boardId: uuid('board_id').notNull().references(() => boards.id, { onDelete: 'cascade' }),
+    fromAgentId: text('from_agent_id').notNull(),
+    toAgentId: text('to_agent_id').notNull(),
+    content: text('content').notNull(),
+    priority: text('priority').notNull().default('normal'),
+    metadata: jsonb('metadata'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('idx_agent_messages_inbox').on(t.boardId, t.toAgentId, t.createdAt),
+    index('idx_agent_messages_from').on(t.boardId, t.fromAgentId, t.createdAt),
+  ],
+)
+
+// ---- session archives (session compression + structured summaries) ----
+export const sessionArchives = pgTable(
+  'session_archives',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sessionId: text('session_id').notNull().unique(),
+    boardId: uuid('board_id').references(() => boards.id, { onDelete: 'set null' }),
+    agentId: text('agent_id'),
+    summary: text('summary').notNull(),
+    keyDecisions: jsonb('key_decisions').$type<string[]>().default([]),
+    keyOutcomes: jsonb('key_outcomes').$type<string[]>().default([]),
+    errorPatterns: jsonb('error_patterns').$type<string[]>().default([]),
+    tokenCost: text('token_cost'),
+    turnCount: integer('turn_count'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('idx_session_archives_board').on(t.boardId, t.createdAt),
+    index('idx_session_archives_agent').on(t.agentId, t.createdAt),
+  ],
+)

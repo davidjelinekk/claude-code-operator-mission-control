@@ -5,6 +5,12 @@ import { db } from '../db/client.js'
 import { users, sessions } from '../db/schema.js'
 import { config } from '../config.js'
 
+/** Timing-safe string comparison for token validation. */
+export function safeTokenMatch(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b))
+}
+
 export function hashPassword(password: string): string {
   const salt = randomBytes(16).toString('hex')
   const hash = scryptSync(password, salt, 64).toString('hex')
@@ -62,7 +68,7 @@ export async function authMiddleware(c: Context, next: Next): Promise<void> {
     const token = authHeader.slice(7)
 
     // Legacy OPERATOR_TOKEN for agents/automation
-    if (token === config.OPERATOR_TOKEN) {
+    if (safeTokenMatch(token, config.OPERATOR_TOKEN)) {
       c.set('user', { id: 'system', username: 'system', role: 'admin' })
       await next()
       return
@@ -86,7 +92,7 @@ export async function authMiddleware(c: Context, next: Next): Promise<void> {
 
 export async function validateWsToken(token: string | null): Promise<boolean> {
   if (!token) return false
-  if (token === config.OPERATOR_TOKEN) return true
+  if (safeTokenMatch(token, config.OPERATOR_TOKEN)) return true
   const user = await getSessionUser(token)
   return user !== null
 }

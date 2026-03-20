@@ -14,6 +14,7 @@ import { Route as TagsRouteImport } from './routes/tags'
 import { Route as SkillsRouteImport } from './routes/skills'
 import { Route as SkillPacksRouteImport } from './routes/skill-packs'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ScriptsRouteImport } from './routes/scripts'
 import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as PeopleRouteImport } from './routes/people'
 import { Route as OrchestrationRouteImport } from './routes/orchestration'
@@ -62,6 +63,11 @@ const SkillPacksRoute = SkillPacksRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScriptsRoute = ScriptsRouteImport.update({
+  id: '/scripts',
+  path: '/scripts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectsRoute = ProjectsRouteImport.update({
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/orchestration': typeof OrchestrationRoute
   '/people': typeof PeopleRouteWithChildren
   '/projects': typeof ProjectsRouteWithChildren
+  '/scripts': typeof ScriptsRoute
   '/settings': typeof SettingsRoute
   '/skill-packs': typeof SkillPacksRoute
   '/skills': typeof SkillsRoute
@@ -228,6 +235,7 @@ export interface FileRoutesByTo {
   '/flow': typeof FlowRoute
   '/login': typeof LoginRoute
   '/orchestration': typeof OrchestrationRoute
+  '/scripts': typeof ScriptsRoute
   '/settings': typeof SettingsRoute
   '/skill-packs': typeof SkillPacksRoute
   '/skills': typeof SkillsRoute
@@ -259,6 +267,7 @@ export interface FileRoutesById {
   '/orchestration': typeof OrchestrationRoute
   '/people': typeof PeopleRouteWithChildren
   '/projects': typeof ProjectsRouteWithChildren
+  '/scripts': typeof ScriptsRoute
   '/settings': typeof SettingsRoute
   '/skill-packs': typeof SkillPacksRoute
   '/skills': typeof SkillsRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/orchestration'
     | '/people'
     | '/projects'
+    | '/scripts'
     | '/settings'
     | '/skill-packs'
     | '/skills'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/flow'
     | '/login'
     | '/orchestration'
+    | '/scripts'
     | '/settings'
     | '/skill-packs'
     | '/skills'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/orchestration'
     | '/people'
     | '/projects'
+    | '/scripts'
     | '/settings'
     | '/skill-packs'
     | '/skills'
@@ -382,6 +394,7 @@ export interface RootRouteChildren {
   OrchestrationRoute: typeof OrchestrationRoute
   PeopleRoute: typeof PeopleRouteWithChildren
   ProjectsRoute: typeof ProjectsRouteWithChildren
+  ScriptsRoute: typeof ScriptsRoute
   SettingsRoute: typeof SettingsRoute
   SkillPacksRoute: typeof SkillPacksRoute
   SkillsRoute: typeof SkillsRoute
@@ -424,6 +437,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scripts': {
+      id: '/scripts'
+      path: '/scripts'
+      fullPath: '/scripts'
+      preLoaderRoute: typeof ScriptsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/projects': {
@@ -679,6 +699,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrchestrationRoute: OrchestrationRoute,
   PeopleRoute: PeopleRouteWithChildren,
   ProjectsRoute: ProjectsRouteWithChildren,
+  ScriptsRoute: ScriptsRoute,
   SettingsRoute: SettingsRoute,
   SkillPacksRoute: SkillPacksRoute,
   SkillsRoute: SkillsRoute,

@@ -1,5 +1,13 @@
 {
   "name": "claude-code-operator-mission-control",
+  "description": "Workflow orchestration dashboard for Claude Code — manage agents, skills, sessions, and projects",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davidjelinekk/claude-code-operator-mission-control.git"
+  },
+  "author": "David Jelinek",
+  "license": "MIT",
+  "keywords": ["claude-code", "claude", "agent-sdk", "orchestration", "mission-control", "mcp"],
   "private": true,
   "scripts": {
     "build": "turbo build",

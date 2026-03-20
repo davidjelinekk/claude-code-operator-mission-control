@@ -9,6 +9,7 @@ import { config } from '../config.js'
 import { z } from 'zod'
 import { dispatchWebhookEvent } from '../lib/webhookDispatcher.js'
 import { discoverAgents } from '../services/claude-code/agent-discovery.js'
+import { sessionManager } from '../services/claude-code/agent-sdk-client.js'
 
 function getKnownAgentIds(): Set<string> {
   try {
@@ -267,7 +268,7 @@ tasksRouter.post(
       .values({ taskId, boardId: task.boardId, agentId, eventType: 'task.note', message, metadata })
       .returning()
 
-    // @mention routing: create task.mention events for referenced agents
+    // @mention routing: create task.mention events and spawn agent sessions
     const mentioned = parseMentions(message, getKnownAgentIds())
     for (const mentionedAgentId of mentioned) {
       await db.insert(activityEvents).values({
@@ -285,6 +286,19 @@ tasksRouter.post(
         mentionedBy: agentId,
         noteId: note.id,
       }))
+
+      // Spawn agent session for the mentioned agent
+      if (sessionManager.getStatus().available) {
+        sessionManager.spawn({
+          prompt: `You were mentioned in a task note.\nTask ID: ${taskId}\nMentioned by: ${agentId ?? 'unknown'}\nMessage: ${message}`,
+          agent: mentionedAgentId,
+          callerContext: 'task-mention',
+          boardId: task.boardId,
+          taskId,
+          maxTurns: 3,
+          permissionMode: 'plan',
+        }).catch(() => {})
+      }
     }
 
     return c.json(note, 201)

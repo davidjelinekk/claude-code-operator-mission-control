@@ -4,8 +4,8 @@ import { z } from 'zod'
 import { db } from '../db/client.js'
 import { approvals, boards, activityEvents } from '../db/schema.js'
 import { eq, and, desc, gte } from 'drizzle-orm'
-import { spawnAgentSession } from '../services/claude-code/agent-sdk-client.js'
-import { getSessionUser } from '../lib/auth.js'
+import { sessionManager } from '../services/claude-code/agent-sdk-client.js'
+import { getSessionUser, safeTokenMatch } from '../lib/auth.js'
 import { config } from '../config.js'
 
 const router = new Hono()
@@ -77,9 +77,14 @@ router.patch('/:id', zValidator('json', UpdateApprovalSchema), async (c) => {
   if (isResolving && data.status) {
     const [board] = await db.select().from(boards).where(eq(boards.id, approval.boardId))
 
-    if (board?.gatewayAgentId && config.ANTHROPIC_API_KEY) {
-      spawnAgentSession({
+    if (board?.gatewayAgentId && sessionManager.getStatus().available) {
+      sessionManager.spawn({
         prompt: `APPROVAL RESOLVED\nApproval ID: ${approval.id}\nAction: ${approval.actionType}\nDecision: ${approval.status}\nTask: ${approval.taskId ?? 'none'}`,
+        callerContext: 'approval',
+        boardId: approval.boardId,
+        taskId: approval.taskId ?? undefined,
+        agent: board.gatewayAgentId,
+        permissionMode: 'plan',
       }).catch(() => {})
     }
 
@@ -103,12 +108,11 @@ router.delete('/:id', async (c) => {
 
 // SSE stream for approvals by board
 router.get('/boards/:boardId/stream', async (c) => {
-  // Accept token from Authorization header (preferred) or query param (backward compat for agents)
   let authenticated = false
   const authHeader = c.req.header('Authorization')
   if (authHeader?.startsWith('Bearer ')) {
     const token = authHeader.slice(7)
-    if (token === config.OPERATOR_TOKEN) {
+    if (safeTokenMatch(token, config.OPERATOR_TOKEN)) {
       authenticated = true
     } else {
       const user = await getSessionUser(token)
@@ -118,7 +122,7 @@ router.get('/boards/:boardId/stream', async (c) => {
   if (!authenticated) {
     const queryToken = c.req.query('token')
     if (queryToken) {
-      if (queryToken === config.OPERATOR_TOKEN) {
+      if (safeTokenMatch(queryToken, config.OPERATOR_TOKEN)) {
         authenticated = true
       } else {
         const user = await getSessionUser(queryToken)

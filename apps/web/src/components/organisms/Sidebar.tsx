@@ -18,6 +18,7 @@ import {
   FolderOpen,
   CheckSquare,
   Server,
+  Terminal,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/ui'
@@ -62,6 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: 'flow',      to: '/flow',      icon: GitBranch },
       { label: 'orchestration', to: '/orchestration', icon: Server },
       { label: 'skills',    to: '/skills',    icon: Wrench },
+      { label: 'scripts',   to: '/scripts',   icon: Terminal },
     ],
   },
   {
