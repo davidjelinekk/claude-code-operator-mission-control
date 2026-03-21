@@ -1,12 +1,11 @@
 <p align="center">
-  <img src="apps/web/public/vite.svg" alt="CC Operator" width="48" />
+  <img src="apps/web/public/cc-operator.svg" alt="CC Operator" width="72" />
 </p>
 
 <h1 align="center">Claude Code Operator — Mission Control</h1>
 
 <p align="center">
-  Workflow orchestration dashboard purpose-built for <strong>Claude Code</strong>.<br />
-  Manage agents, skills, CLI scripts, sessions, hooks, MCP servers, and project boards — all from a single operator interface.
+  <em>The operator console for your Claude Code fleet.</em>
 </p>
 
 <p align="center">
@@ -15,6 +14,104 @@
   <img src="https://img.shields.io/badge/pnpm-%3E%3D10-orange" alt="pnpm 10+" />
   <img src="https://img.shields.io/badge/TypeScript-strict-blue" alt="TypeScript strict" />
 </p>
+
+---
+
+```
+> cc_operator.init()
+
+  [orchestration]  spawn, stream, manage Agent SDK sessions
+  [context-graph]  intent-aware RAG with self-growing knowledge graph
+  [cli-scripts]    bash/python/node → MCP tools, zero glue code
+  [governance]     atomic task claims, approval workflows, board policies
+  [message-bus]    inter-agent messaging + live flow visualization
+  [analytics]      token usage, session archives, cost tracking
+
+  status: operational
+```
+
+---
+
+## Why This Exists
+
+LangChain and CrewAI are SDKs for building agent pipelines. CC Operator is an **operating system for running agent teams** — with persistent state, self-growing knowledge, governance policies, and a dashboard. It's the difference between writing code to orchestrate agents and having a platform that does it.
+
+Every Claude Code user already has agents, skills, scripts, and session logs in `~/.claude/`. CC Operator reads all of it and gives you an operator console on top. No SDK to learn. Your agents are markdown files. Your tools are bash scripts with a manifest. Everything you already have becomes orchestratable.
+
+---
+
+## What Makes It Different
+
+### The RAG isn't search — it's intent-aware context injection
+
+Most RAG systems do: query → embed → top-K → stuff into prompt. CC Operator classifies the **intent** of each agent spawn (debugging? planning? reviewing?) and dynamically reweights five retrieval sources:
+
+```
+agent.spawn(prompt, { boardId })
+       │
+       ▼
+  intent.classify(prompt)
+       │
+       ├── vector similarity    (pgvector, 768-dim)
+       ├── graph neighborhood   (1-hop entities + observations)
+       ├── board memory         (recent, with time decay)
+       ├── session archives     (compressed prior sessions)
+       └── error patterns       (known failure modes)
+       │
+       ▼
+  rerank(top_10, via: claude-haiku)
+       │
+       ▼
+  <context> block injected into agent system prompt
+```
+
+The context an agent gets is shaped by *what it's trying to do*, not just what's textually similar.
+
+### The knowledge graph grows itself
+
+Every activity event gets processed by an extraction worker (Claude Haiku) that pulls entities, relationships, and observations. Deduplication happens via vector similarity — not content hashing:
+
+| Similarity | Action |
+|-----------|--------|
+| > 0.85 | Skip (near-duplicate) |
+| 0.7 – 0.85 | Replace if new observation is richer |
+| < 0.7 | Add as new knowledge |
+
+Completed sessions are compressed into structured archives — summary, key decisions, outcomes, error patterns — so future agents inherit institutional memory without token explosion. No manual curation. The graph compounds over time.
+
+### CLI scripts become MCP tools with zero glue code
+
+Write a bash/python/node script. Add a `SCRIPT.md` with YAML frontmatter. It's now an MCP tool any agent session can call.
+
+```
+~/.claude/scripts/my-tool/
+  SCRIPT.md           ← name, description, args-schema, interpreter
+  my_tool.py          ← the executable
+```
+
+The system infers the interpreter from the file extension, routes input three ways (CLI args, stdin JSON, or env vars), enforces timeouts with SIGTERM → SIGKILL escalation, and validates inputs against your JSON Schema. No server to run. No SDK to integrate.
+
+### Real governance, not just chat
+
+- **Atomic task claiming** — race-free `UPDATE...WHERE status='inbox' RETURNING` prevents double-assignment
+- **Circular dependency detection** — BFS with depth limit when adding task deps
+- **Board-level policies** — block status changes with pending approvals, require review before done, restrict who can change status
+- **Approval workflows** — confidence-scored approvals with SSE streaming; resolution triggers gateway agent sessions reactively
+
+### Flow visualization shows relationships that don't exist yet
+
+Beyond explicit agent-to-agent messages, the system synthesizes **implicit dispatch edges** — when a task transitions to `in_progress`, a synthetic edge appears from the gateway agent. You see both what agents are *telling each other* and the task topology that *connects them*.
+
+```
+  ┌──────────┐          ┌──────────┐
+  │ planner  │──message──│ debugger │
+  └────┬─────┘          └──────────┘
+       │ dispatched (synthetic)
+       ▼
+  ┌──────────┐
+  │ executor │
+  └──────────┘
+```
 
 ---
 
@@ -43,20 +140,23 @@ pnpm dev
 
 ---
 
-## What It Does
+## Capabilities
 
-- **Boards & Tasks** — Kanban-style project management with agent assignment, approvals, dependencies
-- **Agent Management** — Discover and manage agents from `~/.claude/agents/*.md`
-- **Skill Discovery** — Browse skills from `~/.claude/skills/` and MCP servers from `settings.json`
-- **CLI Scripts** — Executable tools with structured I/O, injectable as MCP tools into agent sessions
-- **Orchestration** — Spawn, stream, and manage Agent SDK sessions with full control over model, permissions, effort, agents, scripts, and MCP servers
-- **Context Graph RAG** — Semantic search, entity extraction, knowledge graph, intent-aware retrieval, session compression, and automatic context injection
-- **Session Analytics** — Ingest token usage from `~/.claude/projects/*/` JSONL session logs
-- **Flow Visualization** — Real-time agent communication graph
-- **Agent Message Bus** — Inter-agent messaging with direct and broadcast channels
-- **Approval Workflows** — Confidence-scored approvals with board-level governance policies
-- **Project Orchestration** — Group tasks into projects with sequential/parallel execution
-- **Real-Time Events** — WebSocket, SSE, Redis pub/sub, and outbound webhooks
+```
+> cc_operator.capabilities()
+
+  orchestration     spawn/stream/manage Agent SDK sessions
+  boards            kanban task management with agent assignment
+  agents            discover + manage from ~/.claude/agents/*.md
+  skills            browse skills, MCP servers, CLI scripts
+  context-graph     intent-aware RAG with self-growing knowledge graph
+  message-bus       inter-agent direct + broadcast messaging
+  flow              real-time agent communication graph
+  approvals         confidence-scored governance workflows
+  projects          multi-task orchestration (sequential/parallel)
+  analytics         token usage + cost tracking from JSONL logs
+  events            websocket + SSE + redis pub/sub + webhooks
+```
 
 ## Architecture
 

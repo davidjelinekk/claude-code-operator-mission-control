@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <filter id="g" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Bold chevron > -->
+  <path d="M16 22 L54 50 L16 78"
+        stroke="#58a6ff" stroke-width="9"
+        stroke-linecap="square" stroke-linejoin="miter"
+        stroke-miterlimit="10"
+        filter="url(#g)"/>
+
+  <!-- Dispatch fork from node -->
+  <line x1="64" y1="44" x2="78" y2="28" stroke="#58a6ff" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="64" y1="56" x2="78" y2="72" stroke="#58a6ff" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+
+  <!-- Operator node at vertex -->
+  <circle cx="60" cy="50" r="8" fill="#58a6ff" filter="url(#g)"/>
+  <circle cx="60" cy="50" r="3.5" fill="#0d1117"/>
+
+  <!-- Signal dots — agents dispatched -->
+  <circle cx="82" cy="24" r="2.5" fill="#58a6ff" opacity="0.4"/>
+  <circle cx="84" cy="36" r="2" fill="#58a6ff" opacity="0.55"/>
+  <circle cx="84" cy="64" r="2" fill="#58a6ff" opacity="0.45"/>
+  <circle cx="82" cy="76" r="2.5" fill="#58a6ff" opacity="0.35"/>
+</svg>
