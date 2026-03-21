@@ -1,0 +1,81 @@
+import type { HttpClient } from '../http.js'
+import { parseSSEStream } from '../sse.js'
+import type { SpawnParams, SessionSummary, SessionDetail, SSEEvent } from '../types.js'
+
+export class SessionsResource {
+  constructor(private http: HttpClient) {}
+
+  spawn(params: SpawnParams) {
+    return this.http.post<{ sessionId: string; status: string }>('/api/agent-sdk/spawn', params)
+  }
+
+  list() {
+    return this.http.get<{ active: SessionSummary[]; historical: Array<Record<string, unknown>> }>('/api/agent-sdk/sessions')
+  }
+
+  get(id: string) {
+    return this.http.get<SessionDetail>(`/api/agent-sdk/sessions/${id}`)
+  }
+
+  abort(id: string) {
+    return this.http.post<{ ok: boolean; sessionId: string }>(`/api/agent-sdk/sessions/${id}/abort`)
+  }
+
+  async *stream(id: string): AsyncGenerator<SSEEvent> {
+    const url = this.http.sseUrl(`/api/agent-sdk/sessions/${id}/stream`)
+    const headers: Record<string, string> = { Accept: 'text/event-stream' }
+    const token = this.http.getToken()
+    if (token) headers['Authorization'] = `Bearer ${token}`
+
+    const res = await fetch(url, { headers })
+    if (!res.ok) {
+      const body = await res.text()
+      throw new Error(`SSE stream failed: ${res.status} ${body}`)
+    }
+
+    yield* parseSSEStream(res)
+  }
+
+  status() {
+    return this.http.get<Record<string, unknown>>('/api/agent-sdk/status')
+  }
+
+  interrupt(id: string) {
+    return this.http.post<{ ok: boolean }>(`/api/agent-sdk/sessions/${id}/interrupt`)
+  }
+
+  rename(id: string, title: string) {
+    return this.http.post<{ ok: boolean }>(`/api/agent-sdk/sessions/${id}/rename`, { title })
+  }
+
+  tag(id: string, tag: string | null) {
+    return this.http.post<{ ok: boolean }>(`/api/agent-sdk/sessions/${id}/tag`, { tag })
+  }
+
+  fork(id: string, params?: { upToMessageId?: string; title?: string }) {
+    return this.http.post<Record<string, unknown>>(`/api/agent-sdk/sessions/${id}/fork`, params ?? {})
+  }
+
+  mcpStatus(id: string) {
+    return this.http.get<Record<string, unknown>>(`/api/agent-sdk/sessions/${id}/mcp-status`)
+  }
+
+  accountInfo(id: string) {
+    return this.http.get<Record<string, unknown>>(`/api/agent-sdk/sessions/${id}/account-info`)
+  }
+
+  mcpServers(projectDir?: string) {
+    const qs = projectDir ? `?projectDir=${encodeURIComponent(projectDir)}` : ''
+    return this.http.get<Record<string, unknown>>(`/api/agent-sdk/mcp-servers${qs}`)
+  }
+
+  /** List historical sessions from the file-based session parser */
+  historical(params?: { limit?: number; offset?: number; dir?: string }) {
+    const qs = new URLSearchParams()
+    if (params?.limit) qs.set('limit', String(params.limit))
+    if (params?.offset) qs.set('offset', String(params.offset))
+    if (params?.dir) qs.set('dir', params.dir)
+    const q = qs.toString()
+    return this.http.get<Array<Record<string, unknown>>>(`/api/sessions${q ? `?${q}` : ''}`)
+  }
+}

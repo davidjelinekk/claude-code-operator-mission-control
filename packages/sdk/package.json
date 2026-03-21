@@ -1,15 +1,15 @@
 {
-  "name": "@claude-code-operator/shared-types",
-  "version": "0.0.1",
-  "description": "Shared Zod schemas and TypeScript types for Claude Code Operator",
+  "name": "@cc-operator/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for Claude Code Operator — manage agents, sessions, tasks, and boards",
   "author": "David Jelinek",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/davidjelinekk/claude-code-operator-mission-control.git",
-    "directory": "packages/shared-types"
+    "directory": "packages/sdk"
   },
-  "keywords": ["claude-code", "operator", "types", "zod", "schemas"],
+  "keywords": ["claude-code", "operator", "sdk", "api-client", "agent-sdk"],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -25,10 +25,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "zod": "^3.24.2"
+    "@claude-code-operator/shared-types": "workspace:*"
   },
   "devDependencies": {
     "@claude-code-operator/tsconfig": "workspace:*",
+    "@types/node": "^22.15.3",
     "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=22.0.0"
   }
 }

@@ -1,11 +1,9 @@
 <p align="center">
-  <img src="apps/web/public/cc-operator.svg" alt="CC Operator" width="72" />
+  <img src="docs/cc-operator-hero.png" alt="Claude Code Operator" width="700" />
 </p>
 
-<h1 align="center">Claude Code Operator — Mission Control</h1>
-
 <p align="center">
-  <em>The operator console for your Claude Code fleet.</em>
+  <strong>The operating system for your Claude Code agent fleet.</strong>
 </p>
 
 <p align="center">
@@ -13,6 +11,8 @@
   <img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node 22+" />
   <img src="https://img.shields.io/badge/pnpm-%3E%3D10-orange" alt="pnpm 10+" />
   <img src="https://img.shields.io/badge/TypeScript-strict-blue" alt="TypeScript strict" />
+  <a href="https://www.npmjs.com/package/@cc-operator/sdk"><img src="https://img.shields.io/badge/npm-@cc--operator/sdk-red" alt="SDK" /></a>
+  <a href="https://www.npmjs.com/package/cc-operator"><img src="https://img.shields.io/badge/npm-cc--operator-red" alt="CLI" /></a>
 </p>
 
 ---
@@ -34,17 +34,29 @@
 
 ## Why This Exists
 
-LangChain and CrewAI are SDKs for building agent pipelines. CC Operator is an **operating system for running agent teams** — with persistent state, self-growing knowledge, governance policies, and a dashboard. It's the difference between writing code to orchestrate agents and having a platform that does it.
+<p align="center">
+  <img src="docs/feature-competitive-gap.png" alt="The Competitive Gap" width="650" />
+</p>
 
-Every Claude Code user already has agents, skills, scripts, and session logs in `~/.claude/`. CC Operator reads all of it and gives you an operator console on top. No SDK to learn. Your agents are markdown files. Your tools are bash scripts with a manifest. Everything you already have becomes orchestratable.
+LangChain and CrewAI are SDKs for building agent pipelines. Claude Code Operator is an **operating system for running agent teams** — with persistent state, self-growing knowledge, governance policies, and a dashboard. It's the difference between writing code to orchestrate agents and having a platform that does it.
+
+<p align="center">
+  <img src="docs/feature-managed-platform.png" alt="Flat Files → Managed Platform" width="650" />
+</p>
+
+Every Claude Code user already has agents, skills, scripts, and session logs in `~/.claude/`. Claude Code Operator reads all of it and gives you an operator console on top. No SDK to learn. Your agents are markdown files. Your tools are bash scripts with a manifest. Everything you already have becomes orchestratable.
 
 ---
 
 ## What Makes It Different
 
+<p align="center">
+  <img src="docs/feature-intent-rag.png" alt="Intent-Aware RAG" width="650" />
+</p>
+
 ### The RAG isn't search — it's intent-aware context injection
 
-Most RAG systems do: query → embed → top-K → stuff into prompt. CC Operator classifies the **intent** of each agent spawn (debugging? planning? reviewing?) and dynamically reweights five retrieval sources:
+Most RAG systems do: query → embed → top-K → stuff into prompt. Claude Code Operator classifies the **intent** of each agent spawn (debugging? planning? reviewing?) and dynamically reweights five retrieval sources:
 
 ```
 agent.spawn(prompt, { boardId })
@@ -79,6 +91,10 @@ Every activity event gets processed by an extraction worker (Claude Haiku) that 
 
 Completed sessions are compressed into structured archives — summary, key decisions, outcomes, error patterns — so future agents inherit institutional memory without token explosion. No manual curation. The graph compounds over time.
 
+<p align="center">
+  <img src="docs/feature-scripts-mcp.png" alt="Scripts → MCP Tools" width="650" />
+</p>
+
 ### CLI scripts become MCP tools with zero glue code
 
 Write a bash/python/node script. Add a `SCRIPT.md` with YAML frontmatter. It's now an MCP tool any agent session can call.
@@ -91,12 +107,20 @@ Write a bash/python/node script. Add a `SCRIPT.md` with YAML frontmatter. It's n
 
 The system infers the interpreter from the file extension, routes input three ways (CLI args, stdin JSON, or env vars), enforces timeouts with SIGTERM → SIGKILL escalation, and validates inputs against your JSON Schema. No server to run. No SDK to integrate.
 
+<p align="center">
+  <img src="docs/feature-governance.png" alt="Real Governance" width="650" />
+</p>
+
 ### Real governance, not just chat
 
 - **Atomic task claiming** — race-free `UPDATE...WHERE status='inbox' RETURNING` prevents double-assignment
 - **Circular dependency detection** — BFS with depth limit when adding task deps
 - **Board-level policies** — block status changes with pending approvals, require review before done, restrict who can change status
 - **Approval workflows** — confidence-scored approvals with SSE streaming; resolution triggers gateway agent sessions reactively
+
+<p align="center">
+  <img src="docs/feature-flow-viz.png" alt="Flow Visualization" width="650" />
+</p>
 
 ### Flow visualization shows relationships that don't exist yet
 
@@ -114,6 +138,70 @@ Beyond explicit agent-to-agent messages, the system synthesizes **implicit dispa
 ```
 
 ---
+
+## npm Packages
+
+<p align="center">
+  <img src="docs/cc-operator-architecture.png" alt="npm Ecosystem" width="650" />
+</p>
+
+### Install from npm
+
+```bash
+# Scaffold a new project (fastest)
+npx create-cc-operator my-project
+
+# Or install the SDK and CLI separately
+npm install @cc-operator/sdk          # TypeScript API client
+npm install -g cc-operator            # Global CLI
+```
+
+### SDK — `@cc-operator/sdk`
+
+Zero-dependency TypeScript client with 19 resource classes, SSE streaming, and full type inference.
+
+```typescript
+import { CCOperator } from '@cc-operator/sdk'
+
+const op = new CCOperator({ baseUrl: 'http://localhost:3001', token: '...' })
+
+const boards = await op.boards.list()
+const session = await op.sessions.spawn({ prompt: 'Fix the bug', agent: 'debugger' })
+
+for await (const event of op.sessions.stream(session.sessionId)) {
+  console.log(event.data)
+}
+```
+
+### CLI — `cc-operator`
+
+<p align="center">
+  <img src="docs/cc-operator-workflow.png" alt="Zero to Agents in 60 Seconds" width="650" />
+</p>
+
+```
+cc-operator init                                    # Configure + install Claude Code skill
+cc-operator status                                  # Health check
+cc-operator board list                              # List boards
+cc-operator task create --board ID --title "Fix X"  # Create task
+cc-operator spawn "Fix the bug" --agent=debugger --stream  # Spawn + stream
+cc-operator search "query" --semantic               # Semantic search
+```
+
+All commands support `--json` for machine-readable output.
+
+### Scaffolding — `create-cc-operator`
+
+```bash
+npx create-cc-operator my-project
+# → Downloads template, generates .env, starts Docker, installs deps, builds
+```
+
+---
+
+<p align="center">
+  <img src="docs/feature-workers.png" alt="Simple Infrastructure" width="650" />
+</p>
 
 ## Quick Start
 
@@ -139,6 +227,10 @@ pnpm dev
 > **No Docker?** See [Homebrew setup](#homebrew-setup) below.
 
 ---
+
+<p align="center">
+  <img src="docs/cc-operator-features.png" alt="Why Claude Code Operator" width="650" />
+</p>
 
 ## Capabilities
 

@@ -1,0 +1,37 @@
+{
+  "name": "create-cc-operator",
+  "version": "0.1.0",
+  "description": "Scaffold a new Claude Code Operator project — npx create-cc-operator my-project",
+  "author": "David Jelinek",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davidjelinekk/claude-code-operator-mission-control.git",
+    "directory": "packages/create"
+  },
+  "keywords": ["claude-code", "operator", "create", "scaffolding", "npx"],
+  "type": "module",
+  "bin": {
+    "create-cc-operator": "./dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "chalk": "^5.4.0",
+    "degit": "^2.8.4",
+    "execa": "^9.0.0",
+    "ora": "^8.2.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/prompts": "^2.4.9",
+    "@claude-code-operator/tsconfig": "workspace:*",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

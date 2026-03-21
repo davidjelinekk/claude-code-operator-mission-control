@@ -1,0 +1,8 @@
+{
+  "extends": "@claude-code-operator/tsconfig/node.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "include": ["src"]
+}
