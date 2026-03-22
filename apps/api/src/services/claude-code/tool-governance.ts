@@ -1,4 +1,4 @@
-import type { CanUseTool } from '@anthropic-ai/claude-agent-sdk'
+import type { CanUseTool, Options } from '@anthropic-ai/claude-agent-sdk'
 import { db } from '../../db/client.js'
 import { boards, approvals, activityEvents } from '../../db/schema.js'
 import { eq } from 'drizzle-orm'
@@ -21,14 +21,13 @@ function summarizeInput(input: Record<string, unknown>): string {
 
 /**
  * Creates a CanUseTool handler that enforces board governance policies.
- *
- * - Logs all tool executions as activity events
- * - For high-risk tools (destructive Bash commands, writes to sensitive paths),
- *   checks if the board requires approval and blocks with a pending approval record
+ * Blocks high-risk operations and creates approval records for review.
+ * NOTE: canUseTool is NOT called for tools in the `allowedTools` list.
+ * Use createToolLoggingHooks() for universal tool logging.
  */
 export function createToolGovernanceHandler(boardId: string, agentId?: string): CanUseTool {
   const handler: CanUseTool = async (toolName, input, _options) => {
-    // Log all tool usage as activity events (non-blocking)
+    // Log tool use (also logged by hooks, but this catches non-allowed tools)
     db.insert(activityEvents).values({
       boardId,
       agentId: agentId ?? null,
@@ -43,7 +42,6 @@ export function createToolGovernanceHandler(boardId: string, agentId?: string): 
       const [b] = await db.select().from(boards).where(eq(boards.id, boardId))
       board = b
     } catch {
-      // If we can't read the board, allow by default
       return { behavior: 'allow' as const }
     }
 
@@ -54,7 +52,6 @@ export function createToolGovernanceHandler(boardId: string, agentId?: string): 
       const inputStr = JSON.stringify(input)
       for (const { tool, pattern } of HIGH_RISK_PATTERNS) {
         if (toolName === tool && pattern.test(inputStr)) {
-          // Create a pending approval
           try {
             await db.insert(approvals).values({
               boardId,
@@ -81,4 +78,29 @@ export function createToolGovernanceHandler(boardId: string, agentId?: string): 
   }
 
   return handler
+}
+
+/**
+ * Creates PostToolUse hooks that log ALL tool executions (including allowedTools).
+ * This fires for every tool call regardless of permission mode.
+ */
+export function createToolLoggingHooks(boardId: string, agentId?: string): Options['hooks'] {
+  return {
+    PostToolUse: [{
+      hooks: [async (input) => {
+        const toolName = (input as Record<string, unknown>).tool_name as string ?? 'unknown'
+        const toolInput = (input as Record<string, unknown>).tool_input as Record<string, unknown> ?? {}
+
+        db.insert(activityEvents).values({
+          boardId,
+          agentId: agentId ?? null,
+          eventType: 'tool.used',
+          message: `Tool: ${toolName}`,
+          metadata: { toolName, inputSummary: summarizeInput(toolInput) },
+        }).catch((err) => log.warn({ err }, 'failed to log tool use via hook'))
+
+        return {}
+      }],
+    }],
+  }
 }

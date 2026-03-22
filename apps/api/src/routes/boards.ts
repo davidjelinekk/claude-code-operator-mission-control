@@ -51,9 +51,7 @@ boardsRouter.delete('/:id', async (c) => {
   const [board] = await db.select().from(boards).where(eq(boards.id, id))
   if (!board) return c.json({ error: 'Not found' }, 404)
 
-  const [{ total }] = await db.select({ total: count() }).from(tasks).where(eq(tasks.boardId, id))
-  if (total > 0) return c.json({ error: `Board still has ${total} task(s). Delete or reassign them first.` }, 409)
-
+  // FK cascades handle tasks, approvals, activity_events, board_memory, etc.
   await db.delete(boards).where(eq(boards.id, id))
   return c.json({ ok: true })
 })

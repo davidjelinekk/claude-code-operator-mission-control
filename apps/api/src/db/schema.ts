@@ -484,7 +484,7 @@ export const ctxEntities = pgTable(
     description: text('description'),
     abstract: text('abstract'),
     properties: jsonb('properties').$type<Record<string, unknown>>(),
-    boardId: uuid('board_id').references(() => boards.id, { onDelete: 'set null' }),
+    boardId: uuid('board_id').references(() => boards.id, { onDelete: 'cascade' }),
     confidence: real('confidence').default(1.0),
     sourceType: text('source_type').notNull().default('extraction'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

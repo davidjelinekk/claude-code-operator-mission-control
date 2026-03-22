@@ -21,7 +21,7 @@ import { getAgent } from './agent-discovery.js'
 import { readMcpConfig, type McpServerConfig } from './config-reader.js'
 import { getScript } from './script-discovery.js'
 import { buildScriptMcpConfig } from './script-mcp-bridge.js'
-import { createToolGovernanceHandler } from './tool-governance.js'
+import { createToolGovernanceHandler, createToolLoggingHooks } from './tool-governance.js'
 import { retrieveContextWithTrace } from '../context-graph/context-retriever.js'
 import { buildContextPrompt } from '../context-graph/prompt-builder.js'
 import { extractFromText, compressSession } from '../context-graph/extractor.js'
@@ -372,9 +372,12 @@ class AgentSessionManager extends EventEmitter {
       }
     }
 
-    // Tool governance: attach canUseTool handler for board-governed sessions
+    // Tool governance: attach canUseTool handler + PostToolUse logging hooks
     if (params.boardId) {
       options.canUseTool = createToolGovernanceHandler(params.boardId, params.agent)
+      // PostToolUse hooks log ALL tool calls (including allowedTools which bypass canUseTool)
+      const loggingHooks = createToolLoggingHooks(params.boardId, params.agent)
+      options.hooks = { ...options.hooks, ...loggingHooks }
     }
 
     const session = query({ prompt: params.prompt, options })
