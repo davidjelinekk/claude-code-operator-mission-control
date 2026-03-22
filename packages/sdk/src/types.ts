@@ -3,6 +3,8 @@ export type * from '@claude-code-operator/shared-types'
 export interface CCOperatorConfig {
   baseUrl: string
   token?: string
+  /** Request timeout in milliseconds (default: 30000) */
+  timeout?: number
 }
 
 export class CCOperatorError extends Error {
@@ -43,6 +45,17 @@ export interface SpawnParams {
   enableFileCheckpointing?: boolean
   outputFormat?: { type: 'json_schema'; schema: Record<string, unknown> }
   scripts?: string[]
+  sandbox?: boolean | { enabled: boolean; autoAllowBashIfSandboxed?: boolean; network?: { allowLocalBinding?: boolean; allowUnixSockets?: string[] } }
+  settings?: Record<string, unknown>
+  betas?: string[]
+  settingSources?: Array<'user' | 'project' | 'local'>
+  allowedTools?: string[]
+  thinking?: { type: 'adaptive' } | { type: 'enabled'; budgetTokens: number } | { type: 'disabled' }
+  resumeSessionAt?: string
+  forkSession?: boolean
+  debug?: boolean
+  debugFile?: string
+  plugins?: Array<{ type: 'local'; path: string }>
   resume?: string
   sessionId?: string
   boardId?: string

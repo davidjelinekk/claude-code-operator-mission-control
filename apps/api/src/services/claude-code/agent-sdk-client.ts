@@ -21,6 +21,7 @@ import { getAgent } from './agent-discovery.js'
 import { readMcpConfig, type McpServerConfig } from './config-reader.js'
 import { getScript } from './script-discovery.js'
 import { buildScriptMcpConfig } from './script-mcp-bridge.js'
+import { createToolGovernanceHandler } from './tool-governance.js'
 import { retrieveContextWithTrace } from '../context-graph/context-retriever.js'
 import { buildContextPrompt } from '../context-graph/prompt-builder.js'
 import { extractFromText, compressSession } from '../context-graph/extractor.js'
@@ -68,6 +69,28 @@ export interface SpawnParams {
   scripts?: string[]
   /** Environment variables to pass to the CLI subprocess */
   env?: Record<string, string | undefined>
+  /** Sandbox settings for isolated execution */
+  sandbox?: boolean | { enabled: boolean; autoAllowBashIfSandboxed?: boolean; network?: { allowLocalBinding?: boolean; allowUnixSockets?: string[] } }
+  /** Inline settings to apply (permissions, model, etc.) */
+  settings?: Record<string, unknown>
+  /** Enable beta features (e.g., 'context-1m-2025-08-07' for 1M context) */
+  betas?: string[]
+  /** Control which filesystem settings to load */
+  settingSources?: Array<'user' | 'project' | 'local'>
+  /** Allowed tools that auto-execute without prompting */
+  allowedTools?: string[]
+  /** Thinking/reasoning behavior control */
+  thinking?: { type: 'adaptive' } | { type: 'enabled'; budgetTokens: number } | { type: 'disabled' }
+  /** Resume from a specific message UUID */
+  resumeSessionAt?: string
+  /** Fork to new session when resuming */
+  forkSession?: boolean
+  /** Enable debug logging for the spawned session */
+  debug?: boolean
+  /** Write debug logs to a specific file path (implies debug: true) */
+  debugFile?: string
+  /** Load plugins into the session */
+  plugins?: Array<{ type: 'local'; path: string }>
   // Session management
   resume?: string
   sessionId?: string
@@ -144,9 +167,16 @@ class AgentSessionManager extends EventEmitter {
       abortController,
       permissionMode: params.permissionMode ?? 'plan',
       persistSession: params.persistSession ?? false,
-      // Identify this SDK consumer in User-Agent
+      // Only pass required env vars — avoid leaking DB/Redis credentials to spawned agents
       env: {
-        ...process.env,
+        HOME: process.env.HOME,
+        PATH: process.env.PATH,
+        SHELL: process.env.SHELL,
+        USER: process.env.USER,
+        LANG: process.env.LANG,
+        TERM: process.env.TERM,
+        NODE_ENV: process.env.NODE_ENV,
+        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
         CLAUDE_AGENT_SDK_CLIENT_APP: 'claude-code-operator/1.0',
         ...params.env,
       },
@@ -172,6 +202,59 @@ class AgentSessionManager extends EventEmitter {
     if (params.includePartialMessages) options.includePartialMessages = true
     if (params.agentProgressSummaries) options.agentProgressSummaries = true
     if (params.promptSuggestions) options.promptSuggestions = true
+
+    // Sandbox mode
+    if (params.sandbox) {
+      if (typeof params.sandbox === 'boolean') {
+        options.sandbox = { enabled: params.sandbox, autoAllowBashIfSandboxed: true }
+      } else {
+        options.sandbox = params.sandbox
+      }
+    }
+
+    // Settings injection (permissions, model overrides, etc.)
+    if (params.settings) {
+      options.settings = params.settings as Options['settings']
+    }
+
+    // Beta features
+    if (params.betas && params.betas.length > 0) {
+      options.betas = params.betas as Options['betas']
+    }
+
+    // Setting sources
+    if (params.settingSources) {
+      options.settingSources = params.settingSources as Options['settingSources']
+    }
+
+    // Allowed tools (auto-approved without prompting)
+    if (params.allowedTools) {
+      options.allowedTools = params.allowedTools
+    }
+
+    // Thinking/reasoning behavior
+    if (params.thinking) options.thinking = params.thinking as Options['thinking']
+    if (params.resumeSessionAt) options.resumeSessionAt = params.resumeSessionAt
+    if (params.forkSession) options.forkSession = params.forkSession
+
+    // Debug logging
+    if (params.debug) options.debug = true
+    if (params.debugFile) options.debugFile = params.debugFile
+
+    // Plugins
+    if (params.plugins && params.plugins.length > 0) {
+      options.plugins = params.plugins as Options['plugins']
+    }
+
+    // Strict MCP config validation (always enabled)
+    options.strictMcpConfig = true
+
+    // Capture stderr for logging when debug is enabled
+    if (params.debug || params.debugFile) {
+      options.stderr = (data: string) => {
+        log.debug({ sessionId: 'pending', data: data.slice(0, 500) }, 'session stderr')
+      }
+    }
 
     // Agent resolution: if an agent name is given, look up its definition from
     // ~/.claude/agents/ and inject its config. The SDK's `agent` option expects
@@ -287,6 +370,11 @@ class AgentSessionManager extends EventEmitter {
       } catch (err) {
         log.warn({ err }, 'context retrieval failed, continuing without context')
       }
+    }
+
+    // Tool governance: attach canUseTool handler for board-governed sessions
+    if (params.boardId) {
+      options.canUseTool = createToolGovernanceHandler(params.boardId, params.agent)
     }
 
     const session = query({ prompt: params.prompt, options })
@@ -618,6 +706,90 @@ class AgentSessionManager extends EventEmitter {
     if (!managed?.query || managed.status !== 'running') return null
     try {
       return await managed.query.accountInfo()
+    } catch {
+      return null
+    }
+  }
+
+  async setSessionModel(sessionId: string, model?: string): Promise<boolean> {
+    const managed = this.findSession(sessionId)
+    if (!managed?.query || managed.status !== 'running') return false
+    try {
+      await managed.query.setModel(model)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async setSessionPermissionMode(sessionId: string, mode: PermissionMode): Promise<boolean> {
+    const managed = this.findSession(sessionId)
+    if (!managed?.query || managed.status !== 'running') return false
+    try {
+      await managed.query.setPermissionMode(mode)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async applySessionSettings(sessionId: string, settings: Record<string, unknown>): Promise<boolean> {
+    const managed = this.findSession(sessionId)
+    if (!managed?.query || managed.status !== 'running') return false
+    try {
+      await managed.query.applyFlagSettings(settings as Parameters<typeof managed.query.applyFlagSettings>[0])
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async stopSessionTask(sessionId: string, taskId: string): Promise<boolean> {
+    const managed = this.findSession(sessionId)
+    if (!managed?.query || managed.status !== 'running') return false
+    try {
+      await managed.query.stopTask(taskId)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  async setSessionMcpServers(sessionId: string, servers: Record<string, unknown>): Promise<unknown> {
+    const managed = this.findSession(sessionId)
+    if (!managed?.query || managed.status !== 'running') return null
+    try {
+      return await managed.query.setMcpServers(servers as Parameters<typeof managed.query.setMcpServers>[0])
+    } catch {
+      return null
+    }
+  }
+
+  async rewindSessionFiles(sessionId: string, userMessageId: string, dryRun?: boolean): Promise<unknown> {
+    const managed = this.findSession(sessionId)
+    if (!managed?.query || managed.status !== 'running') return null
+    try {
+      return await managed.query.rewindFiles(userMessageId, dryRun ? { dryRun } : undefined)
+    } catch {
+      return null
+    }
+  }
+
+  async getSessionAgents(sessionId: string): Promise<unknown[] | null> {
+    const managed = this.findSession(sessionId)
+    if (!managed?.query || managed.status !== 'running') return null
+    try {
+      return await managed.query.supportedAgents()
+    } catch {
+      return null
+    }
+  }
+
+  async getSessionCommands(sessionId: string): Promise<unknown[] | null> {
+    const managed = this.findSession(sessionId)
+    if (!managed?.query || managed.status !== 'running') return null
+    try {
+      return await managed.query.supportedCommands()
     } catch {
       return null
     }

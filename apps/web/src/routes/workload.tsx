@@ -5,20 +5,11 @@ import { useTasksInProgress, useInboxQueue, useCancelTask } from '@/hooks/api/ta
 import type { Task } from '@/hooks/api/boards'
 import { useBoards } from '@/hooks/api/boards'
 import { useAgentNameMap } from '@/hooks/api/agents'
+import { relativeTime } from '@/lib/utils'
 
 export const Route = createFileRoute('/workload')({
   component: WorkloadPage,
 })
-
-function relativeTime(iso: string | null | undefined): string {
-  if (!iso) return '—'
-  const diff = Date.now() - new Date(iso).getTime()
-  const m = Math.floor(diff / 60000)
-  if (m < 60) return `${m}m`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h`
-  return `${Math.floor(h / 24)}d`
-}
 
 const PRIORITY_COLOR: Record<Task['priority'], string> = {
   high: 'text-[#f85149]',

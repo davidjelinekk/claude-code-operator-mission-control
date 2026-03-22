@@ -138,7 +138,7 @@ boardsRouter.get('/:id/snapshot', async (c) => {
   const id = c.req.param('id')
   const [board] = await db.select().from(boards).where(eq(boards.id, id))
   if (!board) return c.json({ error: 'Not found' }, 404)
-  const boardTasks = await db.select().from(tasks).where(eq(tasks.boardId, id)).orderBy(desc(tasks.createdAt))
+  const boardTasks = await db.select().from(tasks).where(eq(tasks.boardId, id)).orderBy(desc(tasks.createdAt)).limit(500)
   const boardApprovals = await db.select().from(approvals).where(eq(approvals.boardId, id)).orderBy(desc(approvals.createdAt)).limit(50)
   return c.json({ board, tasks: boardTasks, approvals: boardApprovals })
 })

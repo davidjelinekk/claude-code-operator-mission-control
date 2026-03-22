@@ -21,7 +21,9 @@ export function useFlowSocket({ setNodes, setEdges, buildNode, buildEdge }: UseF
     const token = useAuthStore.getState().token
     if (!token) return
 
-    const wsUrl = `ws://localhost:3001/ws/flow?token=${token}`
+    const apiBase = import.meta.env.VITE_API_URL || window.location.origin
+    const wsBase = apiBase.replace(/^http/, 'ws')
+    const wsUrl = `${wsBase}/ws/flow?token=${token}`
     let delay = 1000
     let timeoutId: ReturnType<typeof setTimeout> | null = null
 

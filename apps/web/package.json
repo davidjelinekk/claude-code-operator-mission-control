@@ -19,7 +19,6 @@
     "@tanstack/react-query": "^5.67.2",
     "@tanstack/react-router": "^1.114.22",
     "@tanstack/router-devtools": "^1.114.22",
-    "@types/dagre": "^0.7.54",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "ky": "^1.7.5",
@@ -34,6 +33,7 @@
   "devDependencies": {
     "@claude-code-operator/tsconfig": "workspace:*",
     "@tanstack/router-plugin": "^1.114.22",
+    "@types/dagre": "^0.7.54",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",

@@ -21,8 +21,8 @@ export class TasksResource {
     if (params?.projectId) qs.set('projectId', params.projectId)
     if (params?.status) qs.set('status', params.status)
     if (params?.assignedAgentId) qs.set('assignedAgentId', params.assignedAgentId)
-    if (params?.limit) qs.set('limit', String(params.limit))
-    if (params?.offset) qs.set('offset', String(params.offset))
+    if (params?.limit != null) qs.set('limit', String(params.limit))
+    if (params?.offset != null) qs.set('offset', String(params.offset))
     const q = qs.toString()
     return this.http.get<Task[]>(`/api/tasks${q ? `?${q}` : ''}`)
   }
@@ -47,7 +47,7 @@ export class TasksResource {
     const qs = new URLSearchParams()
     if (params?.boardId) qs.set('boardId', params.boardId)
     if (params?.agentId) qs.set('agentId', params.agentId)
-    if (params?.limit) qs.set('limit', String(params.limit))
+    if (params?.limit != null) qs.set('limit', String(params.limit))
     const q = qs.toString()
     return this.http.get<Task[]>(`/api/tasks/queue${q ? `?${q}` : ''}`)
   }

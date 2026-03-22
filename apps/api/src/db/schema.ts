@@ -108,7 +108,13 @@ export const tasks = pgTable('tasks', {
   autoReason: text('auto_reason'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-})
+}, (t) => [
+  index('idx_tasks_board_status').on(t.boardId, t.status),
+  index('idx_tasks_board_created').on(t.boardId, t.createdAt),
+  index('idx_tasks_project').on(t.projectId),
+  index('idx_tasks_assigned_agent').on(t.assignedAgentId),
+  index('idx_tasks_due_at').on(t.dueAt),
+])
 
 export const taskDependencies = pgTable(
   'task_dependencies',
@@ -116,7 +122,10 @@ export const taskDependencies = pgTable(
     taskId: uuid('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
     dependsOnTaskId: uuid('depends_on_task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
   },
-  (t) => [unique().on(t.taskId, t.dependsOnTaskId)],
+  (t) => [
+    unique().on(t.taskId, t.dependsOnTaskId),
+    index('idx_task_deps_depends_on').on(t.dependsOnTaskId),
+  ],
 )
 
 export const approvals = pgTable('approvals', {
@@ -131,7 +140,11 @@ export const approvals = pgTable('approvals', {
   rubricScores: jsonb('rubric_scores'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
-})
+}, (t) => [
+  index('idx_approvals_board_status').on(t.boardId, t.status),
+  index('idx_approvals_task_status').on(t.taskId, t.status),
+  index('idx_approvals_board_created').on(t.boardId, t.createdAt),
+])
 
 // ---- analytics ----
 export const tokenEvents = pgTable(
@@ -244,7 +257,9 @@ export const personThreads = pgTable('person_threads', {
   summary: text('summary'),
   lastMessageAt: timestamp('last_message_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-})
+}, (t) => [
+  index('idx_person_threads_person').on(t.personId),
+])
 
 export const personTasks = pgTable('person_tasks', {
   personId: uuid('person_id').notNull().references(() => people.id, { onDelete: 'cascade' }),
@@ -404,7 +419,9 @@ export const webhooks = pgTable('webhooks', {
   description: text('description'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-})
+}, (t) => [
+  index('idx_webhooks_board').on(t.boardId),
+])
 
 // ---- task templates ----
 export const taskTemplates = pgTable('task_templates', {

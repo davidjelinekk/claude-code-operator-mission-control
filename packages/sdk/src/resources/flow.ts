@@ -37,7 +37,7 @@ export class FlowResource {
 
   listEdges(params?: { limit?: number }) {
     const qs = new URLSearchParams()
-    if (params?.limit) qs.set('limit', String(params.limit))
+    if (params?.limit != null) qs.set('limit', String(params.limit))
     const q = qs.toString()
     return this.http.get<FlowEdge[]>(`/api/flow/edges${q ? `?${q}` : ''}`)
   }

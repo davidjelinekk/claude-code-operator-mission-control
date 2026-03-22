@@ -1,26 +1,13 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Plus, Kanban, Clock } from 'lucide-react'
+import { Plus, Clock } from 'lucide-react'
 import { useBoards, useCreateBoard } from '@/hooks/api/boards'
 import { useAgents } from '@/hooks/api/agents'
-import { cn } from '@/lib/utils'
+import { cn, relativeTime } from '@/lib/utils'
 
 export const Route = createFileRoute('/boards/')({
   component: BoardsPage,
 })
-
-function formatRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  if (diffMins < 1) return 'just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  const diffHours = Math.floor(diffMins / 60)
-  if (diffHours < 24) return `${diffHours}h ago`
-  const diffDays = Math.floor(diffHours / 24)
-  return `${diffDays}d ago`
-}
 
 function CreateBoardDialog({ onClose }: { onClose: () => void }) {
   const { data: agents } = useAgents()
@@ -200,7 +187,7 @@ function BoardsPage() {
                 {board.lastActivity && (
                   <span className={cn('text-xs text-[#6e7681] flex items-center gap-1 ml-auto font-mono')}>
                     <Clock className="h-3 w-3" />
-                    {formatRelativeTime(board.lastActivity)}
+                    {relativeTime(board.lastActivity)}
                   </span>
                 )}
               </div>

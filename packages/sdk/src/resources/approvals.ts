@@ -31,8 +31,8 @@ export class ApprovalsResource {
     if (params?.boardId) qs.set('boardId', params.boardId)
     if (params?.taskId) qs.set('taskId', params.taskId)
     if (params?.status) qs.set('status', params.status)
-    if (params?.limit) qs.set('limit', String(params.limit))
-    if (params?.offset) qs.set('offset', String(params.offset))
+    if (params?.limit != null) qs.set('limit', String(params.limit))
+    if (params?.offset != null) qs.set('offset', String(params.offset))
     const q = qs.toString()
     return this.http.get<Approval[]>(`/api/approvals${q ? `?${q}` : ''}`)
   }

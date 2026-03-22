@@ -12,7 +12,7 @@ export class AgentBusResource {
     const qs = new URLSearchParams({ boardId: params.boardId, agentId: params.agentId })
     if (params.since) qs.set('since', params.since)
     if (params.from) qs.set('from', params.from)
-    if (params.limit) qs.set('limit', String(params.limit))
+    if (params.limit != null) qs.set('limit', String(params.limit))
     return this.http.get<Array<Record<string, unknown>>>(`/api/agent-bus/inbox?${qs}`)
   }
 

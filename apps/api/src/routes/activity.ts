@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { db } from '../db/client.js'
 import { activityEvents } from '../db/schema.js'
-import { eq, and, desc, gte, sql } from 'drizzle-orm'
+import { eq, and, desc, gte } from 'drizzle-orm'
 
 const router = new Hono()
 

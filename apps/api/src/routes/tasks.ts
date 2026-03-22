@@ -159,69 +159,81 @@ tasksRouter.patch('/:id', zValidator('json', UpdateTaskWithOutcomeSchema), async
   const id = c.req.param('id')
   const data = c.req.valid('json')
 
-  const [existingTask] = await db.select().from(tasks).where(eq(tasks.id, id))
-  if (!existingTask) return c.json({ error: 'Not found' }, 404)
+  const task = await db.transaction(async (tx) => {
+    const [existingTask] = await tx.select().from(tasks).where(eq(tasks.id, id))
+    if (!existingTask) return null
 
-  const statusChanging = data.status !== undefined && data.status !== existingTask.status
+    const statusChanging = data.status !== undefined && data.status !== existingTask.status
 
-  if (statusChanging) {
-    const [board] = await db.select().from(boards).where(eq(boards.id, existingTask.boardId))
+    if (statusChanging) {
+      const [board] = await tx.select().from(boards).where(eq(boards.id, existingTask.boardId))
 
-    if (board) {
-      // 1. blockStatusChangesWithPendingApproval
-      if (board.blockStatusChangesWithPendingApproval) {
-        const [pendingApproval] = await db.select().from(approvals)
-          .where(and(eq(approvals.taskId, id), eq(approvals.status, 'pending')))
-        if (pendingApproval) {
-          return c.json({ error: 'Status change blocked: this task has a pending approval.' }, 409)
+      if (board) {
+        if (board.blockStatusChangesWithPendingApproval) {
+          const [pendingApproval] = await tx.select().from(approvals)
+            .where(and(eq(approvals.taskId, id), eq(approvals.status, 'pending')))
+          if (pendingApproval) {
+            throw new Error('STATUS_BLOCKED:Status change blocked: this task has a pending approval.')
+          }
         }
-      }
 
-      // 2. requireReviewBeforeDone
-      if (board.requireReviewBeforeDone && data.status === 'done' && existingTask.status !== 'review') {
-        return c.json({ error: 'Task must pass through Review before being marked Done.' }, 409)
-      }
-
-      // 3. requireApprovalForDone
-      if (board.requireApprovalForDone && data.status === 'done') {
-        const [approvedApproval] = await db.select().from(approvals)
-          .where(and(eq(approvals.taskId, id), eq(approvals.status, 'approved')))
-        if (!approvedApproval) {
-          return c.json({ error: 'An approved approval is required before marking Done.' }, 409)
+        if (board.requireReviewBeforeDone && data.status === 'done' && existingTask.status !== 'review') {
+          throw new Error('STATUS_BLOCKED:Task must pass through Review before being marked Done.')
         }
-      }
 
-      // 4. onlyLeadCanChangeStatus
-      if (board.onlyLeadCanChangeStatus) {
-        const agentId = c.req.header('x-agent-id')
-        if (!agentId || agentId !== board.gatewayAgentId) {
-          return c.json({ error: 'Only the lead agent can change task status.' }, 403)
+        if (board.requireApprovalForDone && data.status === 'done') {
+          const [approvedApproval] = await tx.select().from(approvals)
+            .where(and(eq(approvals.taskId, id), eq(approvals.status, 'approved')))
+          if (!approvedApproval) {
+            throw new Error('STATUS_BLOCKED:An approved approval is required before marking Done.')
+          }
+        }
+
+        if (board.onlyLeadCanChangeStatus) {
+          const agentId = c.req.header('x-agent-id')
+          if (!agentId || agentId !== board.gatewayAgentId) {
+            throw new Error('STATUS_FORBIDDEN:Only the lead agent can change task status.')
+          }
         }
       }
     }
-  }
 
-  const updates: Record<string, unknown> = {
-    ...data,
-    updatedAt: new Date(),
-    dueAt: data.dueAt != null ? new Date(data.dueAt) : data.dueAt,
-  }
-  if (data.status === 'in_progress') updates['inProgressAt'] = new Date()
-  if (data.status === 'done' && existingTask.status !== 'done') updates['completedAt'] = new Date()
-  const [task] = await db.update(tasks).set(updates).where(eq(tasks.id, id)).returning()
+    const updates: Record<string, unknown> = {
+      ...data,
+      updatedAt: new Date(),
+      dueAt: data.dueAt != null ? new Date(data.dueAt) : data.dueAt,
+    }
+    if (data.status === 'in_progress') updates['inProgressAt'] = new Date()
+    if (data.status === 'done' && existingTask.status !== 'done') updates['completedAt'] = new Date()
+    const [updated] = await tx.update(tasks).set(updates).where(eq(tasks.id, id)).returning()
+    if (!updated) return null
+
+    // Auto-update project progress when a task is marked done
+    if (data.status === 'done' && updated.projectId) {
+      const [totalRow] = await tx.select({ total: count() }).from(tasks).where(eq(tasks.projectId, updated.projectId))
+      const [doneRow] = await tx.select({ done: count() }).from(tasks).where(and(eq(tasks.projectId, updated.projectId), eq(tasks.status, 'done')))
+      const total = totalRow?.total ?? 0
+      const done = doneRow?.done ?? 0
+      const progressPct = total > 0 ? Math.round((done / total) * 100) : 0
+      await tx.update(projects).set({ progressPct, updatedAt: new Date() }).where(eq(projects.id, updated.projectId))
+    }
+
+    return updated
+  }).catch((err: Error) => {
+    if (err.message.startsWith('STATUS_BLOCKED:')) {
+      return { _error: err.message.slice(15), _status: 409 as const }
+    }
+    if (err.message.startsWith('STATUS_FORBIDDEN:')) {
+      return { _error: err.message.slice(17), _status: 403 as const }
+    }
+    throw err
+  })
+
   if (!task) return c.json({ error: 'Not found' }, 404)
+  if ('_error' in task) return c.json({ error: task._error }, task._status)
+
   await redis.publish(`board:${task.boardId}`, JSON.stringify({ type: 'task.updated', task }))
   dispatchWebhookEvent({ type: 'task.updated', boardId: task.boardId, payload: task })
-
-  // Auto-update project progress when a task is marked done
-  if (data.status === 'done' && task.projectId) {
-    const [totalRow] = await db.select({ total: count() }).from(tasks).where(eq(tasks.projectId, task.projectId))
-    const [doneRow] = await db.select({ done: count() }).from(tasks).where(and(eq(tasks.projectId, task.projectId), eq(tasks.status, 'done')))
-    const total = totalRow?.total ?? 0
-    const done = doneRow?.done ?? 0
-    const progressPct = total > 0 ? Math.round((done / total) * 100) : 0
-    await db.update(projects).set({ progressPct, updatedAt: new Date() }).where(eq(projects.id, task.projectId))
-  }
 
   return c.json(task)
 })
@@ -358,18 +370,19 @@ tasksRouter.post('/:id/deps', zValidator('json', z.object({ dependsOnTaskId: z.s
   const { dependsOnTaskId } = c.req.valid('json')
   if (taskId === dependsOnTaskId) return c.json({ error: 'Self-dependency not allowed' }, 400)
 
-  // Cycle detection: walk the dependency chain from dependsOnTaskId to see if it reaches taskId
-  const visited = new Set<string>()
-  const queue = [dependsOnTaskId]
-  while (queue.length > 0) {
-    if (visited.size > 200) return c.json({ error: 'Dependency chain too deep' }, 400)
-    const current = queue.pop()!
-    if (current === taskId) return c.json({ error: 'Circular dependency detected' }, 409)
-    if (visited.has(current)) continue
-    visited.add(current)
-    const upstream = await db.select({ dep: taskDependencies.dependsOnTaskId })
-      .from(taskDependencies).where(eq(taskDependencies.taskId, current))
-    for (const { dep } of upstream) queue.push(dep)
+  // Cycle detection: use recursive CTE to check if dependsOnTaskId's upstream chain reaches taskId
+  const cycleCheck = await db.execute(sql`
+    WITH RECURSIVE chain(id, depth) AS (
+      SELECT depends_on_task_id, 1 FROM task_dependencies WHERE task_id = ${dependsOnTaskId}
+      UNION
+      SELECT td.depends_on_task_id, c.depth + 1 FROM task_dependencies td
+        JOIN chain c ON td.task_id = c.id
+        WHERE c.depth < 100
+    )
+    SELECT 1 FROM chain WHERE id = ${taskId} LIMIT 1
+  `)
+  if ((cycleCheck as unknown as unknown[]).length > 0) {
+    return c.json({ error: 'Circular dependency detected' }, 409)
   }
 
   await db.insert(taskDependencies).values({ taskId, dependsOnTaskId }).onConflictDoNothing()

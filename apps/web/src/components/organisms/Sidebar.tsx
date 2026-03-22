@@ -10,7 +10,6 @@ import {
   Settings,
   Users,
   Activity,
-  Layers,
   Tag,
   Inbox,
   SlidersHorizontal,

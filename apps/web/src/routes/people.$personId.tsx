@@ -8,11 +8,11 @@ import {
   useAddPersonThread,
   useLinkPersonTask,
   useUnlinkPersonTask,
-  relativeTime,
   initials,
   type Person,
   type PersonThread,
 } from '@/hooks/api/people'
+import { relativeTime } from '@/lib/utils'
 import { useBoards } from '@/hooks/api/boards'
 import { useBoardTasks } from '@/hooks/api/tasks'
 import { useAgents } from '@/hooks/api/agents'

@@ -11,7 +11,7 @@ export class SearchResource {
     const qs = new URLSearchParams({ q })
     if (params?.boardId) qs.set('boardId', params.boardId)
     if (params?.sourceTable) qs.set('sourceTable', params.sourceTable)
-    if (params?.limit) qs.set('limit', String(params.limit))
+    if (params?.limit != null) qs.set('limit', String(params.limit))
     return this.http.get<{ results: unknown[] }>(`/api/search/semantic?${qs}`)
   }
 }

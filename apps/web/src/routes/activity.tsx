@@ -3,23 +3,13 @@ import { useState, useMemo } from 'react'
 import { useActivity, type ActivityEvent } from '@/hooks/api/activity'
 import { useAgentNameMap } from '@/hooks/api/agents'
 import { useBoards } from '@/hooks/api/boards'
+import { relativeTime } from '@/lib/utils'
 
 export const Route = createFileRoute('/activity')({
   component: ActivityPage,
 })
 
 type EventFilter = 'all' | 'task.note' | 'approval' | 'board.chat'
-
-function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
-  const secs = Math.floor(diff / 1000)
-  if (secs < 60) return `${secs}s ago`
-  const mins = Math.floor(secs / 60)
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
-}
 
 function eventColor(eventType: string): string {
   if (eventType === 'task.note') return '#58a6ff'

@@ -79,6 +79,34 @@ agentSdkRouter.post(
         schema: z.record(z.unknown()),
       }).optional(),
       scripts: z.array(z.string()).optional(),
+      sandbox: z.union([
+        z.boolean(),
+        z.object({
+          enabled: z.boolean(),
+          autoAllowBashIfSandboxed: z.boolean().optional(),
+          network: z.object({
+            allowLocalBinding: z.boolean().optional(),
+            allowUnixSockets: z.array(z.string()).optional(),
+          }).optional(),
+        }),
+      ]).optional(),
+      settings: z.record(z.unknown()).optional(),
+      betas: z.array(z.string()).optional(),
+      settingSources: z.array(z.enum(['user', 'project', 'local'])).optional(),
+      allowedTools: z.array(z.string()).optional(),
+      thinking: z.union([
+        z.object({ type: z.literal('adaptive') }),
+        z.object({ type: z.literal('enabled'), budgetTokens: z.number() }),
+        z.object({ type: z.literal('disabled') }),
+      ]).optional(),
+      resumeSessionAt: z.string().optional(),
+      forkSession: z.boolean().optional(),
+      debug: z.boolean().optional(),
+      debugFile: z.string().optional(),
+      plugins: z.array(z.object({
+        type: z.literal('local'),
+        path: z.string().min(1),
+      })).optional(),
       resume: z.string().optional(),
       sessionId: z.string().optional(),
       boardId: z.string().optional(),
@@ -281,6 +309,58 @@ agentSdkRouter.post('/sessions/:id/interrupt', async (c) => {
   return c.json({ ok: true })
 })
 
+// --- POST /sessions/:id/set-model ---
+agentSdkRouter.post(
+  '/sessions/:id/set-model',
+  zValidator('json', z.object({ model: z.string().optional() })),
+  async (c) => {
+    const id = c.req.param('id')
+    const { model } = c.req.valid('json')
+    const ok = await sessionManager.setSessionModel(id, model)
+    if (!ok) return c.json({ error: 'Session not found or not running' }, 404)
+    return c.json({ ok: true })
+  },
+)
+
+// --- POST /sessions/:id/set-permission-mode ---
+agentSdkRouter.post(
+  '/sessions/:id/set-permission-mode',
+  zValidator('json', z.object({ mode: z.enum(['default', 'acceptEdits', 'bypassPermissions', 'plan', 'dontAsk']) })),
+  async (c) => {
+    const id = c.req.param('id')
+    const { mode } = c.req.valid('json')
+    const ok = await sessionManager.setSessionPermissionMode(id, mode)
+    if (!ok) return c.json({ error: 'Session not found or not running' }, 404)
+    return c.json({ ok: true })
+  },
+)
+
+// --- POST /sessions/:id/apply-settings ---
+agentSdkRouter.post(
+  '/sessions/:id/apply-settings',
+  zValidator('json', z.object({ settings: z.record(z.unknown()) })),
+  async (c) => {
+    const id = c.req.param('id')
+    const { settings } = c.req.valid('json')
+    const ok = await sessionManager.applySessionSettings(id, settings)
+    if (!ok) return c.json({ error: 'Session not found or not running' }, 404)
+    return c.json({ ok: true })
+  },
+)
+
+// --- POST /sessions/:id/stop-task ---
+agentSdkRouter.post(
+  '/sessions/:id/stop-task',
+  zValidator('json', z.object({ taskId: z.string().min(1) })),
+  async (c) => {
+    const id = c.req.param('id')
+    const { taskId } = c.req.valid('json')
+    const ok = await sessionManager.stopSessionTask(id, taskId)
+    if (!ok) return c.json({ error: 'Session not found or not running' }, 404)
+    return c.json({ ok: true })
+  },
+)
+
 // --- POST /sessions/:id/rename ---
 agentSdkRouter.post(
   '/sessions/:id/rename',
@@ -346,6 +426,51 @@ agentSdkRouter.get('/sessions/:id/account-info', async (c) => {
   const info = await sessionManager.getAccountInfo(id)
   if (info === null) return c.json({ error: 'Session not found or not running' }, 404)
   return c.json(info)
+})
+
+// --- POST /sessions/:id/set-mcp-servers (hot-swap MCP servers) ---
+agentSdkRouter.post(
+  '/sessions/:id/set-mcp-servers',
+  zValidator('json', z.object({ servers: z.record(z.unknown()) })),
+  async (c) => {
+    const id = c.req.param('id')
+    const { servers } = c.req.valid('json')
+    const result = await sessionManager.setSessionMcpServers(id, servers)
+    if (result === null) return c.json({ error: 'Session not found or not running' }, 404)
+    return c.json(result)
+  },
+)
+
+// --- POST /sessions/:id/rewind-files ---
+agentSdkRouter.post(
+  '/sessions/:id/rewind-files',
+  zValidator('json', z.object({
+    userMessageId: z.string().min(1),
+    dryRun: z.boolean().optional(),
+  })),
+  async (c) => {
+    const id = c.req.param('id')
+    const { userMessageId, dryRun } = c.req.valid('json')
+    const result = await sessionManager.rewindSessionFiles(id, userMessageId, dryRun)
+    if (result === null) return c.json({ error: 'Session not found or not running' }, 404)
+    return c.json(result)
+  },
+)
+
+// --- GET /sessions/:id/agents (available subagents) ---
+agentSdkRouter.get('/sessions/:id/agents', async (c) => {
+  const id = c.req.param('id')
+  const agents = await sessionManager.getSessionAgents(id)
+  if (agents === null) return c.json({ error: 'Session not found or not running' }, 404)
+  return c.json(agents)
+})
+
+// --- GET /sessions/:id/commands (available slash commands) ---
+agentSdkRouter.get('/sessions/:id/commands', async (c) => {
+  const id = c.req.param('id')
+  const commands = await sessionManager.getSessionCommands(id)
+  if (commands === null) return c.json({ error: 'Session not found or not running' }, 404)
+  return c.json(commands)
 })
 
 // --- GET /mcp-servers (available for injection) ---

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { Command } from 'commander'
+import { createRequire } from 'node:module'
 import { initCommand } from './commands/init.js'
 import { startCommand } from './commands/start.js'
 import { statusCommand } from './commands/status.js'
@@ -11,10 +12,13 @@ import { spawnCommand } from './commands/spawn.js'
 import { streamCommand } from './commands/stream.js'
 import { searchCommand } from './commands/search.js'
 
+const require = createRequire(import.meta.url)
+const pkg = require('../package.json') as { version: string }
+
 const program = new Command()
   .name('cc-operator')
   .description('CLI for Claude Code Operator')
-  .version('0.1.0')
+  .version(pkg.version)
 
 program.addCommand(initCommand)
 program.addCommand(startCommand)
@@ -26,5 +30,15 @@ program.addCommand(scriptCommand)
 program.addCommand(spawnCommand)
 program.addCommand(streamCommand)
 program.addCommand(searchCommand)
+
+// Catch unhandled async errors from Commander actions
+process.on('unhandledRejection', (err) => {
+  if (err instanceof Error) {
+    console.error(`Error: ${err.message}`)
+  } else {
+    console.error('Error:', err)
+  }
+  process.exit(1)
+})
 
 program.parse()

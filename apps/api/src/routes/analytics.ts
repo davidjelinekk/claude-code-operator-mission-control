@@ -1,14 +1,14 @@
 import { Hono } from 'hono'
 import { db } from '../db/client.js'
 import { tokenEvents, tasks } from '../db/schema.js'
-import { eq, gte, lte, and, sql, desc } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 import { analyticsIngestWorker } from '../workers/analytics.js'
 
 export const analyticsRouter = new Hono()
 
 analyticsRouter.get('/summary', async (c) => {
-  const from = c.req.query('from')
-  const to = c.req.query('to')
+  const from = c.req.query('from') ?? c.req.query('start')
+  const to = c.req.query('to') ?? c.req.query('end')
 
   let where = sql`1=1`
   if (from) where = sql`${where} AND ${tokenEvents.turnTimestamp} >= ${from}::timestamptz`
@@ -43,8 +43,8 @@ analyticsRouter.get('/summary', async (c) => {
 })
 
 analyticsRouter.get('/by-agent', async (c) => {
-  const from = c.req.query('from')
-  const to = c.req.query('to')
+  const from = c.req.query('from') ?? c.req.query('start')
+  const to = c.req.query('to') ?? c.req.query('end')
 
   let where = sql`1=1`
   if (from) where = sql`${where} AND ${tokenEvents.turnTimestamp} >= ${from}::timestamptz`
@@ -64,8 +64,8 @@ analyticsRouter.get('/by-agent', async (c) => {
 })
 
 analyticsRouter.get('/by-model', async (c) => {
-  const from = c.req.query('from')
-  const to = c.req.query('to')
+  const from = c.req.query('from') ?? c.req.query('start')
+  const to = c.req.query('to') ?? c.req.query('end')
 
   let where = sql`1=1`
   if (from) where = sql`${where} AND ${tokenEvents.turnTimestamp} >= ${from}::timestamptz`
@@ -84,8 +84,8 @@ analyticsRouter.get('/by-model', async (c) => {
 })
 
 analyticsRouter.get('/timeseries', async (c) => {
-  const from = c.req.query('from')
-  const to = c.req.query('to')
+  const from = c.req.query('from') ?? c.req.query('start')
+  const to = c.req.query('to') ?? c.req.query('end')
   const bucket = c.req.query('bucket') ?? 'hourly'
 
   const truncFn = bucket === 'daily' ? 'day' : 'hour'
@@ -149,8 +149,8 @@ analyticsRouter.get('/task-outcomes', async (c) => {
 })
 
 analyticsRouter.get('/by-project', async (c) => {
-  const from = c.req.query('from')
-  const to = c.req.query('to')
+  const from = c.req.query('from') ?? c.req.query('start')
+  const to = c.req.query('to') ?? c.req.query('end')
 
   let where = sql`${tokenEvents.projectId} IS NOT NULL`
   if (from) where = sql`${where} AND ${tokenEvents.turnTimestamp} >= ${from}::timestamptz`

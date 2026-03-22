@@ -59,9 +59,11 @@ projectsRouter.patch('/:id', zValidator('json', UpdateProjectSchema), async (c) 
 
 projectsRouter.delete('/:id', async (c) => {
   const id = c.req.param('id')
-  await db.delete(projectTaskDeps).where(eq(projectTaskDeps.projectId, id))
-  await db.delete(projectTasks).where(eq(projectTasks.projectId, id))
-  await db.delete(projects).where(eq(projects.id, id))
+  await db.transaction(async (tx) => {
+    await tx.delete(projectTaskDeps).where(eq(projectTaskDeps.projectId, id))
+    await tx.delete(projectTasks).where(eq(projectTasks.projectId, id))
+    await tx.delete(projects).where(eq(projects.id, id))
+  })
   return c.json({ ok: true })
 })
 

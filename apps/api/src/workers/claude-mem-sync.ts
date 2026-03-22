@@ -14,7 +14,7 @@ const log = pino({ name: 'claude-mem-sync' })
 
 let lastSyncTimestamp: string | null = null
 
-const ISO_RE = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/
+const ISO_RE = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/
 
 function getClaudeMemDbPath(): string | null {
   const envPath = process.env.CLAUDE_MEM_DB_PATH

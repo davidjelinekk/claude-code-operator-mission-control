@@ -52,8 +52,20 @@ import contextGraphRouter from './routes/context-graph.js'
 
 const app = new Hono()
 
+app.onError((err, c) => {
+  const statusCode = err instanceof Error && 'status' in err ? (err as { status: number }).status : 500
+  console.error(`[error] ${c.req.method} ${c.req.path}:`, err.message)
+  return c.json(
+    { error: statusCode === 500 ? 'Internal server error' : err.message },
+    statusCode as 400 | 401 | 403 | 404 | 409 | 500,
+  )
+})
+
 app.use('*', logger())
-app.use('/api/*', cors({ origin: '*' }))
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS ?? 'http://localhost:5173').split(',').map(s => s.trim())
+app.use('/api/*', cors({
+  origin: (origin) => ALLOWED_ORIGINS.includes(origin) ? origin : null,
+}))
 
 // Agent callback route — no OPERATOR_TOKEN required; auth is the session ID
 // passed as ?sid= in the URL, which is validated against the DB.
@@ -126,19 +138,19 @@ async function start(): Promise<void> {
   await seedAdmin()
 
   // Startup workers (non-blocking)
-  skillsRefreshWorker.run().catch(() => {})
-  analyticsIngestWorker.run().catch(() => {})
-  setTimeout(() => flowTailWorker.run().catch(() => {}), 5000)
-  embeddingWorker.run().catch(() => {})
-  extractionWorker.run().catch(() => {})
-  claudeMemSyncWorker.run().catch(() => {})
+  skillsRefreshWorker.run().catch((err) => console.error('[worker] skills refresh failed:', err.message))
+  analyticsIngestWorker.run().catch((err) => console.error('[worker] analytics ingest failed:', err.message))
+  setTimeout(() => flowTailWorker.run().catch((err) => console.error('[worker] flow tail failed:', err.message)), 5000)
+  embeddingWorker.run().catch((err) => console.error('[worker] embedding failed:', err.message))
+  extractionWorker.run().catch((err) => console.error('[worker] extraction failed:', err.message))
+  claudeMemSyncWorker.run().catch((err) => console.error('[worker] claude-mem sync failed:', err.message))
 
   // Periodic workers
-  setInterval(() => analyticsIngestWorker.run().catch(() => {}), 5 * 60 * 1000)
-  setInterval(() => flowTailWorker.run().catch(() => {}), 2 * 60 * 1000)
-  setInterval(() => embeddingWorker.run().catch(() => {}), 60 * 1000)
-  setInterval(() => extractionWorker.run().catch(() => {}), 3 * 60 * 1000)
-  setInterval(() => claudeMemSyncWorker.run().catch(() => {}), 5 * 60 * 1000)
+  setInterval(() => analyticsIngestWorker.run().catch((err) => console.error('[worker] analytics ingest:', err.message)), 5 * 60 * 1000)
+  setInterval(() => flowTailWorker.run().catch((err) => console.error('[worker] flow tail:', err.message)), 2 * 60 * 1000)
+  setInterval(() => embeddingWorker.run().catch((err) => console.error('[worker] embedding:', err.message)), 60 * 1000)
+  setInterval(() => extractionWorker.run().catch((err) => console.error('[worker] extraction:', err.message)), 3 * 60 * 1000)
+  setInterval(() => claudeMemSyncWorker.run().catch((err) => console.error('[worker] claude-mem sync:', err.message)), 5 * 60 * 1000)
 
   const server = serve({ fetch: app.fetch, port: config.PORT }) as unknown as import('node:http').Server
 
@@ -177,7 +189,7 @@ async function start(): Promise<void> {
 
   // Graceful shutdown: clean up sessions and connections
   const shutdown = () => {
-    console.log('[claude-code-operator] shutting down...')
+    console.info('[claude-code-operator] shutting down...')
     sessionManager.destroy()
     server.close()
     process.exit(0)
@@ -185,7 +197,7 @@ async function start(): Promise<void> {
   process.on('SIGTERM', shutdown)
   process.on('SIGINT', shutdown)
 
-  console.log(`[claude-code-operator] API running on http://localhost:${config.PORT}`)
+  console.info(`[claude-code-operator] API running on http://localhost:${config.PORT}`)
 }
 
 start().catch((err) => {

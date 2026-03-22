@@ -3,14 +3,16 @@ import { CCOperatorError, type CCOperatorConfig } from './types.js'
 export class HttpClient {
   private baseUrl: string
   private token?: string
+  private timeout: number
 
   constructor(config: CCOperatorConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, '')
     this.token = config.token
+    this.timeout = config.timeout ?? 30000
   }
 
   private headers(extra?: Record<string, string>): Record<string, string> {
-    const h: Record<string, string> = { ...extra }
+    const h: Record<string, string> = { 'User-Agent': 'cc-operator-sdk/0.1.0', ...extra }
     if (this.token) h['Authorization'] = `Bearer ${this.token}`
     return h
   }
@@ -26,8 +28,12 @@ export class HttpClient {
         method,
         headers: hdrs,
         body: body !== undefined ? JSON.stringify(body) : undefined,
+        signal: AbortSignal.timeout(this.timeout),
       })
     } catch (err) {
+      if (err instanceof DOMException && (err.name === 'AbortError' || err.name === 'TimeoutError')) {
+        throw new CCOperatorError(0, `Request timeout after ${this.timeout}ms`)
+      }
       throw new CCOperatorError(0, `Network error: ${err instanceof Error ? err.message : String(err)}`)
     }
 
@@ -62,6 +68,12 @@ export class HttpClient {
     return this.request<T>('DELETE', path)
   }
 
+  /**
+   * Build a full URL for server-sent events.
+   * Note: Token is passed as query parameter because the EventSource API
+   * does not support custom headers. The server should ensure access logs
+   * redact query parameters containing tokens.
+   */
   sseUrl(path: string): string {
     let url = `${this.baseUrl}${path}`
     if (this.token) {

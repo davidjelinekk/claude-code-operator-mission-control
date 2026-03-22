@@ -2,20 +2,32 @@ services:
   postgres:
     image: pgvector/pgvector:pg17
     environment:
-      POSTGRES_DB: cc_operator
-      POSTGRES_USER: operator
-      POSTGRES_PASSWORD: operator
+      POSTGRES_DB: ${POSTGRES_DB:-cc_operator}
+      POSTGRES_USER: ${POSTGRES_USER:-operator}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-operator}
     ports:
-      - "5434:5432"
+      - "${PG_PORT:-5434}:5432"
     volumes:
       - cc_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-operator} -d ${POSTGRES_DB:-cc_operator}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - cc_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
 volumes:
   cc_pg_data:

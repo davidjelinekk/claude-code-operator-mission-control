@@ -1,20 +1,26 @@
 import { Hono } from 'hono'
+import { zValidator } from '@hono/zod-validator'
+import { z } from 'zod'
 import { db } from '../db/client.js'
 import { agentMessages } from '../db/schema.js'
 import { redis } from '../lib/redis.js'
 import { sessionManager } from '../services/claude-code/agent-sdk-client.js'
 import { eq, and, or, gte, desc } from 'drizzle-orm'
 
+const SendMessageSchema = z.object({
+  boardId: z.string().uuid(),
+  fromAgentId: z.string().min(1),
+  toAgentId: z.string().min(1),
+  content: z.string().min(1),
+  priority: z.string().optional(),
+  metadata: z.record(z.unknown()).nullable().optional(),
+})
+
 const app = new Hono()
 
 // POST /send — insert message, publish to Redis for dashboard push
-app.post('/send', async (c) => {
-  const body = await c.req.json()
-  const { boardId, fromAgentId, toAgentId, content, priority, metadata } = body
-
-  if (!boardId || !fromAgentId || !toAgentId || !content) {
-    return c.json({ error: 'boardId, fromAgentId, toAgentId, and content are required' }, 400)
-  }
+app.post('/send', zValidator('json', SendMessageSchema), async (c) => {
+  const { boardId, fromAgentId, toAgentId, content, priority, metadata } = c.req.valid('json')
 
   const [msg] = await db.insert(agentMessages).values({
     boardId,

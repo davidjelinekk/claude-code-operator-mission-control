@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Plus } from 'lucide-react'
-import { usePeople, useCreatePerson, relativeTime, initials, SOURCE_STYLES, type Person } from '@/hooks/api/people'
-import { cn } from '@/lib/utils'
+import { usePeople, useCreatePerson, initials, SOURCE_STYLES, type Person } from '@/hooks/api/people'
+import { cn, relativeTime } from '@/lib/utils'
 
 export const Route = createFileRoute('/people/')({
   component: PeoplePage,

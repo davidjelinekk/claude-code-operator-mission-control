@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useAuthStore } from '@/store/auth'
 
 export interface OrchestrationStatus {
   available: boolean
@@ -55,6 +56,16 @@ export interface SpawnParams {
   effort?: 'low' | 'medium' | 'high' | 'max'
   promptSuggestions?: boolean
   scripts?: string[]
+  sandbox?: boolean | { enabled: boolean; autoAllowBashIfSandboxed?: boolean }
+  settings?: Record<string, unknown>
+  betas?: string[]
+  allowedTools?: string[]
+  thinking?: { type: 'adaptive' } | { type: 'enabled'; budgetTokens: number } | { type: 'disabled' }
+  resumeSessionAt?: string
+  forkSession?: boolean
+  debug?: boolean
+  debugFile?: string
+  plugins?: Array<{ type: 'local'; path: string }>
   resume?: string
   boardId?: string
   taskId?: string
@@ -105,6 +116,56 @@ export function useAbortSession() {
   })
 }
 
+export function useSetSessionModel() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sessionId, model }: { sessionId: string; model?: string }) =>
+      api.post(`api/agent-sdk/sessions/${sessionId}/set-model`, { json: { model } }).json<{ ok: boolean }>(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orchestration', 'sessions'] })
+    },
+  })
+}
+
+export function useSetSessionPermissionMode() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ sessionId, mode }: { sessionId: string; mode: string }) =>
+      api.post(`api/agent-sdk/sessions/${sessionId}/set-permission-mode`, { json: { mode } }).json<{ ok: boolean }>(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orchestration', 'sessions'] })
+    },
+  })
+}
+
+export function useApplySessionSettings() {
+  return useMutation({
+    mutationFn: ({ sessionId, settings }: { sessionId: string; settings: Record<string, unknown> }) =>
+      api.post(`api/agent-sdk/sessions/${sessionId}/apply-settings`, { json: { settings } }).json<{ ok: boolean }>(),
+  })
+}
+
+export function useStopSessionTask() {
+  return useMutation({
+    mutationFn: ({ sessionId, taskId }: { sessionId: string; taskId: string }) =>
+      api.post(`api/agent-sdk/sessions/${sessionId}/stop-task`, { json: { taskId } }).json<{ ok: boolean }>(),
+  })
+}
+
+export function useSetSessionMcpServers() {
+  return useMutation({
+    mutationFn: ({ sessionId, servers }: { sessionId: string; servers: Record<string, unknown> }) =>
+      api.post(`api/agent-sdk/sessions/${sessionId}/set-mcp-servers`, { json: { servers } }).json(),
+  })
+}
+
+export function useRewindSessionFiles() {
+  return useMutation({
+    mutationFn: ({ sessionId, userMessageId, dryRun }: { sessionId: string; userMessageId: string; dryRun?: boolean }) =>
+      api.post(`api/agent-sdk/sessions/${sessionId}/rewind-files`, { json: { userMessageId, dryRun } }).json<{ canRewind: boolean; error?: string; filesChanged?: string[] }>(),
+  })
+}
+
 export interface StreamEvent {
   type: string
   session_id?: string
@@ -138,8 +199,9 @@ export function useSessionStream(sessionId: string | null) {
     setEvents([])
     setDone(false)
 
-    const token = localStorage.getItem('session_token') ?? ''
-    const url = `${window.location.origin}/api/agent-sdk/sessions/${sessionId}/stream?token=${encodeURIComponent(token)}`
+    const token = useAuthStore.getState().token ?? ''
+    const apiBase = import.meta.env.VITE_API_URL || window.location.origin
+    const url = `${apiBase}/api/agent-sdk/sessions/${sessionId}/stream?token=${encodeURIComponent(token)}`
     const es = new EventSource(url)
     sourceRef.current = es
 

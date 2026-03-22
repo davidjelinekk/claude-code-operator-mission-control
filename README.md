@@ -32,6 +32,62 @@
 
 ---
 
+## Not a Plugin. A Platform.
+
+Claude Code Operator is **not** a Claude Code plugin, extension, or wrapper. It is an **orchestration platform** that sits above Claude Code and manages entire agent fleets.
+
+```
+                          ┌─────────────────────────────────────────────┐
+                          │        Claude Code Operator (Platform)      │
+                          │                                             │
+                          │   ┌───────────┐  ┌────────┐  ┌──────────┐  │
+                          │   │ Dashboard │  │REST API│  │ Workers  │  │
+                          │   │ React 19  │  │ Hono   │  │ 6 bg     │  │
+                          │   └───────────┘  └───┬────┘  └──────────┘  │
+                          │                      │                     │
+                          │   ┌──────────────────┴──────────────────┐  │
+                          │   │  PostgreSQL + pgvector    Redis     │  │
+                          │   │  37 tables  768-dim      pub/sub   │  │
+                          │   └──────────────────┬──────────────────┘  │
+                          │                      │                     │
+                          │          spawns & governs many:            │
+                          │   ┌──────────┐ ┌──────────┐ ┌──────────┐  │
+                          │   │Session 1 │ │Session 2 │ │Session N │  │
+                          │   │  Claude  │ │  Claude  │ │  Claude  │  │
+                          │   └──────────┘ └──────────┘ └──────────┘  │
+                          │     ↑ injected: governance, context,      │
+                          │       sandbox, MCP tools, message bus      │
+                          └─────────────────────────────────────────────┘
+```
+
+A **plugin** lives inside a single Claude Code session. CC Operator lives *above* — it spawns sessions, injects governance, builds knowledge across sessions, and gives you a control plane.
+
+| | Plugin | CC Operator |
+|---|--------|-------------|
+| **Scope** | Single session | Fleet of sessions |
+| **State** | Filesystem only | PostgreSQL + Redis + pgvector |
+| **UI** | None | Full React dashboard |
+| **Knowledge** | Per-session | Cross-session knowledge graph that grows itself |
+| **Governance** | None | Approval workflows, board policies, tool-level interception |
+| **Analytics** | None | Token usage, cost tracking, session archives |
+| **Communication** | None | Inter-agent message bus + flow visualization |
+
+Every spawned agent session gets CC Operator capabilities injected automatically:
+
+```
+cc_operator.spawn("Fix the auth bug", { boardId, agent: "debugger" })
+    │
+    ├─→ canUseTool()       tool governance — logs use, blocks risky ops
+    ├─→ systemPrompt       context graph knowledge injected by intent
+    ├─→ mcpServers         agent bus + claude-mem + script tools
+    ├─→ sandbox            isolated filesystem/network execution
+    └─→ on completion      extract knowledge → compress → archive
+```
+
+The analogy: **Kubernetes is to containers what CC Operator is to Claude Code sessions.** You don't make Kubernetes a Docker plugin.
+
+---
+
 ## Why This Exists
 
 <p align="center">
@@ -113,10 +169,12 @@ The system infers the interpreter from the file extension, routes input three wa
 
 ### Real governance, not just chat
 
+- **Tool-level interception** — every tool call in governed sessions passes through `canUseTool` — logs all tool usage, blocks destructive operations (`rm -rf`, force-push, writes to `.env`/`.key`), auto-creates approval records for human review
 - **Atomic task claiming** — race-free `UPDATE...WHERE status='inbox' RETURNING` prevents double-assignment
-- **Circular dependency detection** — BFS with depth limit when adding task deps
+- **Circular dependency detection** — recursive CTE with depth limit when adding task deps
 - **Board-level policies** — block status changes with pending approvals, require review before done, restrict who can change status
 - **Approval workflows** — confidence-scored approvals with SSE streaming; resolution triggers gateway agent sessions reactively
+- **Sandbox isolation** — spawned agents run with `sandbox: { enabled: true }` for restricted filesystem/network access
 
 <p align="center">
   <img src="docs/feature-flow-viz.png" alt="Flow Visualization" width="650" />

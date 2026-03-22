@@ -9,7 +9,7 @@ export class ContextGraphResource {
     if (params?.type) qs.set('type', params.type)
     if (params?.boardId) qs.set('boardId', params.boardId)
     if (params?.q) qs.set('q', params.q)
-    if (params?.limit) qs.set('limit', String(params.limit))
+    if (params?.limit != null) qs.set('limit', String(params.limit))
     const q = qs.toString()
     return this.http.get<Array<Record<string, unknown>>>(`/api/context-graph/entities${q ? `?${q}` : ''}`)
   }
@@ -34,7 +34,7 @@ export class ContextGraphResource {
   search(q: string, params?: { boardId?: string; limit?: number }) {
     const qs = new URLSearchParams({ q })
     if (params?.boardId) qs.set('boardId', params.boardId)
-    if (params?.limit) qs.set('limit', String(params.limit))
+    if (params?.limit != null) qs.set('limit', String(params.limit))
     return this.http.get<{ results: unknown[]; method: string }>(`/api/context-graph/search?${qs}`)
   }
 

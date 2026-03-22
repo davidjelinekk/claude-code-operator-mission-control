@@ -1,9 +1,12 @@
 import { scryptSync, randomBytes, timingSafeEqual } from 'node:crypto'
 import type { Context, Next } from 'hono'
 import { eq, and, gt } from 'drizzle-orm'
+import pino from 'pino'
 import { db } from '../db/client.js'
 import { users, sessions } from '../db/schema.js'
 import { config } from '../config.js'
+
+const log = pino({ name: 'auth' })
 
 /** Timing-safe string comparison for token validation. */
 export function safeTokenMatch(a: string, b: string): boolean {
@@ -59,7 +62,7 @@ export async function seedAdmin(): Promise<void> {
 
   const passwordHash = hashPassword(authPass)
   await db.insert(users).values({ username: authUser, passwordHash, role: 'admin' })
-  console.log(`[auth] seeded admin user: ${authUser}`)
+  log.info({ username: authUser }, 'seeded admin user')
 }
 
 export async function authMiddleware(c: Context, next: Next): Promise<void> {

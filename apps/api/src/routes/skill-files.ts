@@ -7,8 +7,11 @@ import { config } from '../config.js'
 
 export const skillFilesRouter = new Hono()
 
+const SAFE_ID = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/
+
 skillFilesRouter.get('/:id/content', async (c) => {
   const id = c.req.param('id')
+  if (!SAFE_ID.test(id)) return c.json({ error: 'Invalid ID' }, 400)
   const filePath = join(config.CLAUDE_HOME, 'skills', id, 'SKILL.md')
   if (!existsSync(filePath)) return c.json({ error: 'Not found' }, 404)
   const content = readFileSync(filePath, 'utf-8')
@@ -19,6 +22,7 @@ skillFilesRouter.put('/:id/content', zValidator('json', z.object({
   content: z.string().min(1),
 })), async (c) => {
   const id = c.req.param('id')
+  if (!SAFE_ID.test(id)) return c.json({ error: 'Invalid ID' }, 400)
   const filePath = join(config.CLAUDE_HOME, 'skills', id, 'SKILL.md')
   if (!existsSync(filePath)) return c.json({ error: 'Not found' }, 404)
   const { content } = c.req.valid('json')
