@@ -71,14 +71,30 @@ packages/
 ## Type Checking
 
 ```bash
-pnpm typecheck    # runs across entire monorepo
+pnpm typecheck    # runs across entire monorepo (8 packages)
 ```
 
-There is no test suite yet — typecheck is the primary verification step.
+## Testing
+
+Two test suites exist — both require the API server running on `:3001`.
+
+```bash
+# API endpoint tests (152 assertions, no API key needed)
+bash test-all.sh
+
+# Full orchestration simulation with real Claude agents (134 assertions, requires ANTHROPIC_API_KEY)
+bash test-e2e-orchestration.sh
+```
+
+**`test-all.sh`** validates all 34 API route files — CRUD operations, governance policies, search, analytics, SSE streams, and negative cases. Runs in ~5 seconds, no cost.
+
+**`test-e2e-orchestration.sh`** simulates a multi-team security audit: creates 2 boards, a 4-task dependency chain, spawns 3 real Claude agents that read source files, validates tool governance, agent bus messaging, approval workflows, and cascade cleanup. Cost: ~$0.15.
+
+Both scripts are idempotent (timestamped names) and clean up after themselves.
 
 ## PR Guidelines
 
 - Keep PRs focused — one feature or fix per PR
 - Run `pnpm typecheck` before submitting
-- Include a description of what changed and why
-- If adding new API endpoints, document them in the README API Reference section
+- Run `bash test-all.sh` to verify API changes don't break endpoints
+- If adding new API endpoints, document them in the README API Reference section and add coverage to `test-all.sh`

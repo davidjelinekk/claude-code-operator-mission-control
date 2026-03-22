@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.1] - 2026-03-22
+
+### Added
+
+- **Test suite** — `test-all.sh` (152 API endpoint tests) and `test-e2e-orchestration.sh` (134 orchestration simulation tests with 3 real Claude agents)
+- **PostToolUse logging hooks** — tool governance now logs ALL tool calls via SDK hooks (including `allowedTools` which bypass `canUseTool`)
+- **Testing documentation** — README Testing section with phase-by-phase simulation breakdown, CONTRIBUTING.md updated with test workflow
+
+### Fixed
+
+- **Board cascade delete** — removed task-count guard that blocked deletion; FK cascades now handle cleanup
+- **ctx_entities FK** — changed from `SET NULL` to `CASCADE` to fix unique constraint violation (`uq_ctx_entities_name_type_board`) when deleting boards with context graph entities
+
 ## [0.3.0] - 2026-03-22
 
 ### Added — Live Session Control

@@ -878,6 +878,65 @@ Open **Scripts** in the dashboard, click **Refresh**, and test it.
 
 ---
 
+## Testing
+
+Two test suites validate the system — an API endpoint test and a full orchestration simulation.
+
+### API Endpoint Tests — `test-all.sh`
+
+Validates all 34 API route files with **152 assertions** across 9 workstreams:
+
+```bash
+bash test-all.sh
+```
+
+| Workstream | What it tests |
+|-----------|---------------|
+| Auth & Health | Login flow, session tokens, operator token, `/health`, `/system/status`, no-auth rejection |
+| Board & Task CRUD | Create/update/delete boards and tasks, atomic claim, cancel, batch create, notes, queue |
+| Project Orchestration | Projects, 3-task dependency chain, recursive CTE cycle detection, `respectDeps` queue |
+| Approval Workflows | Create/approve/reject, `blockStatusChangesWithPendingApproval`, `requireApprovalForDone` |
+| Agent & Skill Discovery | Agents, skills, scripts, agent-bus messaging (send/inbox), hooks, MCP servers |
+| Analytics & Search | Summary, by-agent/model/project, timeseries, task velocity, text + semantic search |
+| Real-time Events | SSE streams (activity, approvals), WebSocket upgrade |
+| Auxiliary Entities | Tags, people, custom fields, templates, board groups, chat, memory, webhooks, skill packs, flow, cron, context graph |
+| Orchestration Status | SDK status, sessions, MCP servers, spawn, abort/get non-existent |
+
+### E2E Orchestration Simulation — `test-e2e-orchestration.sh`
+
+Simulates a **real multi-team security audit** with live Claude agents. **134 assertions** across 16 phases:
+
+```bash
+bash test-e2e-orchestration.sh
+```
+
+**What happens:** The test creates two boards (Dev and Ops), a 4-task project with dependencies (Analyze → Fix → Test → Deploy), spawns **3 real Claude agents** that read actual source files, and validates the entire orchestration pipeline end-to-end.
+
+| Phase | What it simulates |
+|-------|-------------------|
+| 1. Infrastructure | Multi-board setup with board groups, tags, custom fields, board memory, context graph entities |
+| 2. Project | 4-task dependency chain, cycle detection, batch tasks, tag assignment, stakeholder linking |
+| 3. Templates | Create template, instantiate task from template, verify inherited fields |
+| 4. Agent 1 | **Real Claude agent** reads `agent-files.ts` and `skill-files.ts`, reports security findings |
+| 5. Tool Governance | Verifies `PostToolUse` hooks logged every tool call (Read, Glob, Grep, Bash) as activity events |
+| 6. Agent Bus | Direct messages (analyzer→fixer), cross-board messages (analyzer→ops), broadcast to `*`, inbox verification |
+| 7. Governance | Full pipeline: `inbox` → `in_progress` → `review` → blocked by pending approval → approve → `done` |
+| 8. Agent 2 | **Real Claude agent** reads `docker-compose.yml` on a different board (Ops), reports infrastructure config |
+| 9. Agent 3 | **Real Claude agent** reads `script-files.ts` with context from Agent 1's findings |
+| 10. Concurrency | Verifies 3+ sessions tracked concurrently across boards |
+| 11. Live Control | `set-model`, `set-permission-mode`, `apply-settings`, `stop-task`, `rewind-files`, `set-mcp-servers` on sessions |
+| 12. Analytics | Summary, by-agent/model, timeseries, task velocity/outcomes, flow graph, text + semantic search, context graph |
+| 13. Integrations | Webhooks (create/disable), cron jobs, skill packs, agent/skill/script/hook/MCP listing |
+| 14. Dashboard | Board chat, board memory, snapshots with task counts, board summaries |
+| 15. Streams | SSE activity stream, historical session listing, people/stakeholder data |
+| 16. Negative | Invalid UUIDs, missing fields, double-claim, cancel-done, cycle detection, bus validation |
+
+**Budget controls:** Each agent spawn uses `maxBudgetUsd: 0.50`, `maxTurns: 3`, `effort: 'low'`. Total simulation cost is typically under $0.15.
+
+**Cleanup:** Both tests clean up all created entities (cascade delete via FK) and are idempotent — safe to run repeatedly.
+
+---
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, project structure, and PR guidelines.
