@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - 2026-03-23
+
+### Added — Orchestration Layer
+
+- **MCP Server** (`@cc-operator/mcp-server`) — 14 MCP tools for native Claude Code integration. Boards, tasks, agent spawning, approvals, analytics — all as tool calls Claude can use directly
+- **Orchestration Agent** (`agents/operator-runner.md`) — autonomous Claude Code agent that processes board task queues: claim → spawn → monitor → done → next. The "runner" that turns a board of tasks into completed work
+- **Runner Simulation** (`test-e2e-runner.sh`) — 60-assertion test that proves the orchestration loop: 4-task diamond dependency chain processed autonomously by the runner
+
+### Added — Design System
+
+- **Light + Dark theme** — CSS custom properties (28 tokens), Tailwind theme config, Zustand theme store with localStorage persistence
+- **1,427 hardcoded hex colors → theme tokens** across 38 files
+- **Clean text branding** — replaced ASCII art with "claude code operator" text in Topbar and Login
+- **Theme toggle** — Sun/Moon button in sidebar
+
+### Changed
+
+- `@anthropic-ai/claude-agent-sdk` updated to `0.2.81`
+- Board delete now cascades (ctx_entities FK changed to CASCADE)
+- `cc-operator init` installs MCP server config + orchestration agent
+- README restructured: "How It Works" section, MCP server primary, orchestration agent documented
+- Docs images replaced with clean consulting-style infographics (no competitor name-dropping)
+
 ## [0.3.1] - 2026-03-22
 
 ### Added

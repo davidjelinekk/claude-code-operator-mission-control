@@ -84,7 +84,103 @@ cc_operator.spawn("Fix the auth bug", { boardId, agent: "debugger" })
     └─→ on completion      extract knowledge → compress → archive
 ```
 
-The analogy: **Kubernetes is to containers what CC Operator is to Claude Code sessions.** You don't make Kubernetes a Docker plugin.
+The analogy: **Kubernetes is to containers what Claude Code Operator is to Claude Code sessions.**
+
+---
+
+## How It Works
+
+You set up a board. The orchestration agent runs it. Worker agents do the work.
+
+```
+You: "Create a board for Q2 marketing with tasks for
+      competitor research, content calendar, and ad creative.
+      Research must finish before content calendar starts."
+
+Claude (via MCP): → creates board, 3 tasks, dependency chain
+
+You: "Run it."
+
+Orchestration Agent:
+  → Checks queue: only "competitor research" is unblocked
+  → Claims task, spawns worker agent with governance + context
+  → Worker reads files, analyzes data, completes task
+  → Marks done → "content calendar" now unblocked
+  → Claims next task, spawns worker...
+  → Continues until queue empty
+
+  "Board complete. 3/3 tasks done. Total cost: $0.47.
+   Ad creative pending your approval."
+```
+
+**Three layers:**
+
+| Layer | What it does |
+|-------|-------------|
+| **MCP Server** | 14 tools that let Claude Code manage the Operator natively |
+| **Orchestration Agent** | Autonomous runner that processes board task queues |
+| **Platform** | Boards, tasks, governance, knowledge graph, analytics |
+
+Claude Code handles execution (tools, channels, streaming). The Operator handles orchestration (what runs, when, governed how, tracked at what cost).
+
+---
+
+## MCP Server — Primary Integration
+
+Add to your Claude Code settings (`~/.claude/settings.json`):
+
+```json
+{
+  "mcpServers": {
+    "operator": {
+      "command": "node",
+      "args": ["/path/to/claude-code-operator-mission-control/packages/mcp-server/dist/index.js"],
+      "env": {
+        "OPERATOR_URL": "http://localhost:3001",
+        "OPERATOR_TOKEN": "your-token"
+      }
+    }
+  }
+}
+```
+
+Then from any Claude Code session:
+
+```
+You: "What boards do I have?"
+Claude: [calls operator_list_boards] → "3 boards: Q2 Marketing, Dev Sprint, Compliance"
+
+You: "Spawn a research agent on the marketing board"
+Claude: [calls operator_spawn_agent] → "Agent running. Session ID: abc-123."
+
+You: "Any pending approvals?"
+Claude: [calls operator_list_approvals] → "1 pending: ad creative needs sign-off."
+```
+
+**14 MCP tools:** `operator_status`, `operator_list_boards`, `operator_create_board`, `operator_board_summary`, `operator_list_tasks`, `operator_create_task`, `operator_update_task`, `operator_task_queue`, `operator_spawn_agent`, `operator_list_sessions`, `operator_session_detail`, `operator_list_approvals`, `operator_resolve_approval`, `operator_analytics`
+
+---
+
+## Orchestration Agent
+
+The `operator-runner` agent autonomously processes board task queues:
+
+```bash
+# Install the agent (or run cc-operator init)
+cp agents/operator-runner.md ~/.claude/agents/
+
+# Run a board
+claude --agent operator-runner --prompt "Process all tasks on board <id>"
+```
+
+The agent:
+1. Polls the task queue (`respectDeps=true`)
+2. Claims the highest-priority unblocked task
+3. Spawns a governed worker agent (with context injection, tool governance, sandbox)
+4. Monitors until completion
+5. Marks task done, checks what's now unblocked
+6. Repeats until queue empty or budget reached
+7. Reports: tasks done, cost, pending approvals
 
 ---
 
@@ -197,38 +293,28 @@ Beyond explicit agent-to-agent messages, the system synthesizes **implicit dispa
 
 ---
 
-## npm Packages
+## Packages
 
 <p align="center">
-  <img src="docs/cc-operator-architecture.png" alt="npm Ecosystem" width="650" />
+  <img src="docs/cc-operator-architecture.png" alt="Architecture" width="650" />
 </p>
 
-### Install from npm
+| Package | Purpose |
+|---------|---------|
+| `@cc-operator/mcp-server` | **Primary integration** — 14 MCP tools for Claude Code |
+| `@cc-operator/sdk` | TypeScript API client (19 resource classes, SSE streaming) |
+| `cc-operator` | CLI for terminal operations and automation |
+| `create-cc-operator` | Scaffolding — `npx create-cc-operator my-project` |
+
+### Quick Install
 
 ```bash
 # Scaffold a new project (fastest)
 npx create-cc-operator my-project
 
-# Or install the SDK and CLI separately
+# Or install individually
 npm install @cc-operator/sdk          # TypeScript API client
 npm install -g cc-operator            # Global CLI
-```
-
-### SDK — `@cc-operator/sdk`
-
-Zero-dependency TypeScript client with 19 resource classes, SSE streaming, and full type inference.
-
-```typescript
-import { CCOperator } from '@cc-operator/sdk'
-
-const op = new CCOperator({ baseUrl: 'http://localhost:3001', token: '...' })
-
-const boards = await op.boards.list()
-const session = await op.sessions.spawn({ prompt: 'Fix the bug', agent: 'debugger' })
-
-for await (const event of op.sessions.stream(session.sessionId)) {
-  console.log(event.data)
-}
 ```
 
 ### CLI — `cc-operator`
@@ -238,21 +324,10 @@ for await (const event of op.sessions.stream(session.sessionId)) {
 </p>
 
 ```
-cc-operator init                                    # Configure + install Claude Code skill
-cc-operator status                                  # Health check
-cc-operator board list                              # List boards
-cc-operator task create --board ID --title "Fix X"  # Create task
-cc-operator spawn "Fix the bug" --agent=debugger --stream  # Spawn + stream
-cc-operator search "query" --semantic               # Semantic search
-```
-
-All commands support `--json` for machine-readable output.
-
-### Scaffolding — `create-cc-operator`
-
-```bash
-npx create-cc-operator my-project
-# → Downloads template, generates .env, starts Docker, installs deps, builds
+cc-operator init          # Configure + install MCP server + orchestration agent
+cc-operator status        # Health check
+cc-operator board list    # List boards
+cc-operator spawn "Fix the bug" --agent=debugger --stream
 ```
 
 ---
@@ -880,7 +955,7 @@ Open **Scripts** in the dashboard, click **Refresh**, and test it.
 
 ## Testing
 
-Two test suites validate the system — an API endpoint test and a full orchestration simulation.
+Three test suites validate the system:
 
 ### API Endpoint Tests — `test-all.sh`
 
@@ -933,7 +1008,19 @@ bash test-e2e-orchestration.sh
 
 **Budget controls:** Each agent spawn uses `maxBudgetUsd: 0.50`, `maxTurns: 3`, `effort: 'low'`. Total simulation cost is typically under $0.15.
 
-**Cleanup:** Both tests clean up all created entities (cascade delete via FK) and are idempotent — safe to run repeatedly.
+### Orchestration Runner Simulation — `test-e2e-runner.sh`
+
+Simulates the **operator-runner agent's autonomous loop**. **60 assertions**:
+
+```bash
+bash test-e2e-runner.sh
+```
+
+**What happens:** Creates a board with 4 tasks in a diamond dependency chain (T1 → T2+T3 → T4). Then simulates the orchestration agent: assess queue → claim unblocked task → spawn worker → monitor → mark done → check what's unblocked → repeat. Verifies the full loop: only T1 available initially, T2+T3 unlock after T1, T4 unlocks after both T2+T3.
+
+**Budget:** ~$0.20 total (4 agent spawns at $0.05 each).
+
+**Cleanup:** All three tests clean up created entities (cascade delete) and are idempotent — safe to run repeatedly.
 
 ---
 

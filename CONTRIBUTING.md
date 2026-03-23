@@ -76,7 +76,7 @@ pnpm typecheck    # runs across entire monorepo (8 packages)
 
 ## Testing
 
-Two test suites exist — both require the API server running on `:3001`.
+Three test suites — all require the API server running on `:3001`.
 
 ```bash
 # API endpoint tests (152 assertions, no API key needed)
@@ -84,13 +84,18 @@ bash test-all.sh
 
 # Full orchestration simulation with real Claude agents (134 assertions, requires ANTHROPIC_API_KEY)
 bash test-e2e-orchestration.sh
+
+# Orchestration runner simulation — the autonomous loop (60 assertions, requires ANTHROPIC_API_KEY)
+bash test-e2e-runner.sh
 ```
 
-**`test-all.sh`** validates all 34 API route files — CRUD operations, governance policies, search, analytics, SSE streams, and negative cases. Runs in ~5 seconds, no cost.
+**`test-all.sh`** — validates all 34 API route files. Runs in ~5 seconds, no cost.
 
-**`test-e2e-orchestration.sh`** simulates a multi-team security audit: creates 2 boards, a 4-task dependency chain, spawns 3 real Claude agents that read source files, validates tool governance, agent bus messaging, approval workflows, and cascade cleanup. Cost: ~$0.15.
+**`test-e2e-orchestration.sh`** — spawns 3 real Claude agents, validates governance, agent bus, approval workflows. Cost: ~$0.15.
 
-Both scripts are idempotent (timestamped names) and clean up after themselves.
+**`test-e2e-runner.sh`** — simulates the operator-runner agent: board with 4-task dependency chain, autonomous queue processing (claim → spawn → monitor → done → next). Cost: ~$0.20.
+
+All scripts are idempotent and clean up after themselves.
 
 ## PR Guidelines
 
