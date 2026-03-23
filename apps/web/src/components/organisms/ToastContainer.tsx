@@ -3,10 +3,10 @@ import { useToastStore } from '@/store/toast'
 import { cn } from '@/lib/utils'
 
 const VARIANT_STYLES = {
-  error: 'bg-[#3d1c1c] border-[#f85149]/60 text-[#f85149]',
-  warning: 'bg-[#271700] border-[#d29922]/60 text-[#d29922]',
-  info: 'bg-[#0d2137] border-[#58a6ff]/60 text-[#58a6ff]',
-  success: 'bg-[#0d2113] border-[#3fb950]/60 text-[#3fb950]',
+  error: 'bg-error-subtle border-error/60 text-error',
+  warning: 'bg-warning-subtle border-warning/60 text-warning',
+  info: 'bg-accent-subtle border-accent/60 text-accent',
+  success: 'bg-success-subtle border-success/60 text-success',
 }
 
 export function ToastContainer() {

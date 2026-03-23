@@ -31,11 +31,11 @@ export interface Person {
 }
 
 export const SOURCE_STYLES: Record<Person['source'], string> = {
-  telegram: 'text-[#58a6ff] border-[#1f6feb]',
-  teams: 'text-[#a5a0ff] border-[#6e40c9]',
-  email: 'text-[#8b949e] border-[#30363d]',
-  manual: 'text-[#3fb950] border-[#238636]',
-  form: 'text-[#d29922] border-[#9e6a03]',
+  telegram: 'text-accent border-accent',
+  teams: 'text-purple-400 border-purple-600',
+  email: 'text-text-secondary border-border',
+  manual: 'text-success border-success',
+  form: 'text-warning border-warning',
 }
 
 export interface PersonThread {

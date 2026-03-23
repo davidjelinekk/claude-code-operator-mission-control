@@ -162,8 +162,8 @@ function AnalyticsPage() {
   }
 
   const sortIcon = (key: SortKey) => {
-    if (agentSort !== key) return <span className="ml-1 text-[#6e7681]">↕</span>
-    return <span className="ml-1 text-[#58a6ff]">{agentSortDir === 'desc' ? '↓' : '↑'}</span>
+    if (agentSort !== key) return <span className="ml-1 text-text-tertiary">↕</span>
+    return <span className="ml-1 text-accent">{agentSortDir === 'desc' ? '↓' : '↑'}</span>
   }
 
   const cacheHitPct = summary.data?.cacheHitPct ?? 0
@@ -171,19 +171,19 @@ function AnalyticsPage() {
   return (
     <div className="space-y-6 p-6">
       {/* Header + Range Picker */}
-      <div className="flex items-center justify-between pb-4 mb-5 border-b border-[#21262d]">
-        <h1 className="font-mono text-[13px] font-semibold text-[#e6edf3] tracking-wide uppercase flex items-center gap-2">
-          <span className="text-[#58a6ff]">~/</span>analytics
+      <div className="flex items-center justify-between pb-4 mb-5 border-b border-border-subtle">
+        <h1 className="font-mono text-[13px] font-semibold text-text-primary tracking-wide uppercase flex items-center gap-2">
+          <span className="text-accent">~/</span>analytics
         </h1>
-        <div className="flex border border-[#30363d] overflow-hidden">
+        <div className="flex border border-border overflow-hidden">
           {(['7d', '30d', '90d'] as Range[]).map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
               className={`px-3 py-1.5 text-sm font-mono font-medium transition-colors ${
                 range === r
-                  ? 'bg-[#1f6feb] border-r border-[#388bfd] text-white'
-                  : 'bg-[#161b22] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d]'
+                  ? 'bg-accent border-r border-accent text-white'
+                  : 'bg-surface text-text-secondary hover:text-text-primary hover:bg-surface-hover'
               }`}
             >
               {r}
@@ -194,36 +194,36 @@ function AnalyticsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="border border-[#30363d] bg-[#161b22] p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-1">Total Cost</p>
-          <p className="text-3xl font-bold text-[#58a6ff] font-mono">
+        <div className="border border-border bg-surface p-5">
+          <p className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-1">Total Cost</p>
+          <p className="text-3xl font-bold text-accent font-mono">
             ${summary.data ? parseFloat(summary.data.totalCostUsd).toFixed(4) : '—'}
           </p>
         </div>
-        <div className="border border-[#30363d] bg-[#161b22] p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-1">Cache Hit %</p>
-          <p className={`text-3xl font-bold font-mono ${cacheHitPct > 50 ? 'text-[#3fb950]' : 'text-[#d29922]'}`}>
+        <div className="border border-border bg-surface p-5">
+          <p className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-1">Cache Hit %</p>
+          <p className={`text-3xl font-bold font-mono ${cacheHitPct > 50 ? 'text-success' : 'text-warning'}`}>
             {summary.data ? `${cacheHitPct.toFixed(1)}%` : '—'}
           </p>
         </div>
-        <div className="border border-[#30363d] bg-[#161b22] p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-1">Most Expensive Agent</p>
+        <div className="border border-border bg-surface p-5">
+          <p className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-1">Most Expensive Agent</p>
           {summary.data?.mostExpensiveAgent ? (
             <>
-              <p className="text-lg font-semibold text-[#e6edf3] truncate">{summary.data.mostExpensiveAgent.name}</p>
-              <p className="text-sm text-[#8b949e] font-mono">${parseFloat(summary.data.mostExpensiveAgent.totalCostUsd).toFixed(4)}</p>
+              <p className="text-lg font-semibold text-text-primary truncate">{summary.data.mostExpensiveAgent.name}</p>
+              <p className="text-sm text-text-secondary font-mono">${parseFloat(summary.data.mostExpensiveAgent.totalCostUsd).toFixed(4)}</p>
             </>
           ) : (
-            <p className="text-lg text-[#6e7681]">—</p>
+            <p className="text-lg text-text-tertiary">—</p>
           )}
         </div>
-        <div className="border border-[#30363d] bg-[#161b22] p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-1">Total Tokens</p>
-          <p className="text-3xl font-bold text-[#e6edf3] font-mono">
+        <div className="border border-border bg-surface p-5">
+          <p className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-1">Total Tokens</p>
+          <p className="text-3xl font-bold text-text-primary font-mono">
             {summary.data ? formatTokens(summary.data.totalInputTokens + summary.data.totalOutputTokens) : '—'}
           </p>
           {summary.data && (
-            <p className="text-xs text-[#8b949e] font-mono mt-1">
+            <p className="text-xs text-text-secondary font-mono mt-1">
               {formatTokens(summary.data.totalInputTokens)} in / {formatTokens(summary.data.totalOutputTokens)} out
             </p>
           )}
@@ -231,8 +231,8 @@ function AnalyticsPage() {
       </div>
 
       {/* Time Series */}
-      <div className="border border-[#30363d] bg-[#161b22] p-5">
-        <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-4">Cost Over Time</p>
+      <div className="border border-border bg-surface p-5">
+        <p className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-4">Cost Over Time</p>
         <ResponsiveContainer width="100%" height={240}>
           <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#21262d" />
@@ -264,11 +264,11 @@ function AnalyticsPage() {
       {/* Agent Table + Model Donut */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         {/* Agent Breakdown */}
-        <div className="border border-[#30363d] bg-[#161b22] p-5 overflow-x-auto">
-          <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-3">By Agent</p>
+        <div className="border border-border bg-surface p-5 overflow-x-auto">
+          <p className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-3">By Agent</p>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-xs font-medium uppercase tracking-wider text-[#8b949e] border-b border-[#30363d]">
+              <tr className="text-xs font-medium uppercase tracking-wider text-text-secondary border-b border-border">
                 <th className="text-left pb-2">Agent</th>
                 <th className="text-right pb-2 cursor-pointer select-none" onClick={() => toggleSort('totalCostUsd')}>
                   Cost{sortIcon('totalCostUsd')}
@@ -289,20 +289,20 @@ function AnalyticsPage() {
             </thead>
             <tbody>
               {sortedAgents.map((a) => (
-                <tr key={a.agentId} className="border-b border-[#21262d] hover:bg-[#21262d]/30">
-                  <td className="py-2 text-[#e6edf3] font-mono text-xs">{agentName(a.agentId)}</td>
-                  <td className="py-2 text-right font-mono text-[#58a6ff]">${parseFloat(a.totalCostUsd).toFixed(4)}</td>
-                  <td className="py-2 text-right font-mono text-[#8b949e]">{formatTokens(a.inputTokens)}</td>
-                  <td className="py-2 text-right font-mono text-[#8b949e]">{formatTokens(a.outputTokens)}</td>
-                  <td className={`py-2 text-right font-mono ${a.cacheHitPct > 50 ? 'text-[#3fb950]' : 'text-[#d29922]'}`}>
+                <tr key={a.agentId} className="border-b border-border-subtle hover:bg-surface-hover/30">
+                  <td className="py-2 text-text-primary font-mono text-xs">{agentName(a.agentId)}</td>
+                  <td className="py-2 text-right font-mono text-accent">${parseFloat(a.totalCostUsd).toFixed(4)}</td>
+                  <td className="py-2 text-right font-mono text-text-secondary">{formatTokens(a.inputTokens)}</td>
+                  <td className="py-2 text-right font-mono text-text-secondary">{formatTokens(a.outputTokens)}</td>
+                  <td className={`py-2 text-right font-mono ${a.cacheHitPct > 50 ? 'text-success' : 'text-warning'}`}>
                     {a.cacheHitPct.toFixed(1)}%
                   </td>
-                  <td className="py-2 text-right font-mono text-[#8b949e]">{a.turnCount}</td>
+                  <td className="py-2 text-right font-mono text-text-secondary">{a.turnCount}</td>
                 </tr>
               ))}
               {sortedAgents.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-6 text-center text-[#6e7681]">No data</td>
+                  <td colSpan={6} className="py-6 text-center text-text-tertiary">No data</td>
                 </tr>
               )}
             </tbody>
@@ -310,8 +310,8 @@ function AnalyticsPage() {
         </div>
 
         {/* Model Donut */}
-        <div className="border border-[#30363d] bg-[#161b22] p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-3">Cost by Model</p>
+        <div className="border border-border bg-surface p-5">
+          <p className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-3">Cost by Model</p>
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie
@@ -335,11 +335,11 @@ function AnalyticsPage() {
       </div>
 
       {/* Project Cost Table */}
-      <div className="border border-[#30363d] bg-[#161b22] p-5 overflow-x-auto">
-        <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-3">By Project</p>
+      <div className="border border-border bg-surface p-5 overflow-x-auto">
+        <p className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-3">By Project</p>
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-xs font-medium uppercase tracking-wider text-[#8b949e] border-b border-[#30363d]">
+            <tr className="text-xs font-medium uppercase tracking-wider text-text-secondary border-b border-border">
               <th className="text-left pb-2">Project</th>
               <th className="text-right pb-2">Total Cost</th>
               <th className="text-right pb-2">Tasks</th>
@@ -348,18 +348,18 @@ function AnalyticsPage() {
           </thead>
           <tbody>
             {sortedProjects.map((p) => (
-              <tr key={p.projectId} className="border-b border-[#21262d] hover:bg-[#21262d]/30">
-                <td className="py-2 text-[#e6edf3]">{p.name}</td>
-                <td className="py-2 text-right font-mono text-[#58a6ff]">${parseFloat(p.costUsd).toFixed(4)}</td>
-                <td className="py-2 text-right font-mono text-[#8b949e]">{p.taskCount}</td>
-                <td className="py-2 text-right font-mono text-[#8b949e]">
+              <tr key={p.projectId} className="border-b border-border-subtle hover:bg-surface-hover/30">
+                <td className="py-2 text-text-primary">{p.name}</td>
+                <td className="py-2 text-right font-mono text-accent">${parseFloat(p.costUsd).toFixed(4)}</td>
+                <td className="py-2 text-right font-mono text-text-secondary">{p.taskCount}</td>
+                <td className="py-2 text-right font-mono text-text-secondary">
                   {p.taskCount > 0 ? `$${(parseFloat(p.costUsd) / p.taskCount).toFixed(4)}` : '—'}
                 </td>
               </tr>
             ))}
             {sortedProjects.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-6 text-center text-[#6e7681]">No data</td>
+                <td colSpan={4} className="py-6 text-center text-text-tertiary">No data</td>
               </tr>
             )}
           </tbody>
@@ -367,8 +367,8 @@ function AnalyticsPage() {
       </div>
 
       {/* Task Velocity */}
-      <div className="border border-[#30363d] bg-[#161b22] p-5">
-        <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-4">Task Velocity (Completed/Day)</p>
+      <div className="border border-border bg-surface p-5">
+        <p className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-4">Task Velocity (Completed/Day)</p>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={velocityData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#21262d" />
@@ -386,8 +386,8 @@ function AnalyticsPage() {
       </div>
 
       {/* Task Outcomes */}
-      <div className="border border-[#30363d] bg-[#161b22] p-5">
-        <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-4">Task Outcomes</p>
+      <div className="border border-border bg-surface p-5">
+        <p className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-4">Task Outcomes</p>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={outcomesData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#21262d" />

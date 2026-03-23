@@ -26,17 +26,17 @@ export const Route = createFileRoute('/people/$personId')({
 // --- helpers ---
 
 const CHANNEL_COLORS: Record<PersonThread['channel'], string> = {
-  telegram: 'text-[#58a6ff] border-[#1f6feb]',
-  teams:    'text-[#a5a0ff] border-[#6e40c9]',
-  email:    'text-[#8b949e] border-[#30363d]',
-  other:    'text-[#6e7681] border-[#21262d]',
+  telegram: 'text-accent border-accent',
+  teams:    'text-purple-400 border-purple-600',
+  email:    'text-text-secondary border-border',
+  other:    'text-text-tertiary border-border-subtle',
 }
 
 const TASK_STATUS_STYLES: Record<string, string> = {
-  inbox: 'text-[#8b949e] border-[#30363d]',
-  in_progress: 'text-[#58a6ff] border-[#1f6feb]',
-  review: 'text-[#a5a0ff] border-[#6e40c9]',
-  done: 'text-[#3fb950] border-[#238636]',
+  inbox: 'text-text-secondary border-border',
+  in_progress: 'text-accent border-accent',
+  review: 'text-purple-400 border-purple-600',
+  done: 'text-success border-accent',
 }
 
 const RELATIONSHIP_SUGGESTIONS = ['Direct report', 'Manager', 'Client', 'Vendor', 'Partner', 'Contractor']
@@ -69,7 +69,7 @@ function EditableField({ value, placeholder, onSave, className, inputClassName }
       <input
         autoFocus
         className={cn(
-          'border border-[#58a6ff] bg-[#0d1117] px-1.5 py-0.5 text-xs text-[#e6edf3] outline-none font-mono w-full',
+          'border border-accent bg-canvas px-1.5 py-0.5 text-xs text-text-primary outline-none font-mono w-full',
           inputClassName,
         )}
         value={draft}
@@ -87,8 +87,8 @@ function EditableField({ value, placeholder, onSave, className, inputClassName }
     <button
       onClick={() => { setDraft(value); setEditing(true) }}
       className={cn(
-        'text-left text-xs font-mono text-[#e6edf3] hover:text-[#58a6ff] transition-colors w-full truncate',
-        !value && 'text-[#6e7681] italic',
+        'text-left text-xs font-mono text-text-primary hover:text-accent transition-colors w-full truncate',
+        !value && 'text-text-tertiary italic',
         className,
       )}
     >
@@ -121,10 +121,10 @@ function AddThreadForm({ personId, agents, onDone }: AddThreadFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="border border-[#30363d] bg-[#0d1117] p-3 flex flex-col gap-3 mt-2">
+    <form onSubmit={handleSubmit} className="border border-border bg-canvas p-3 flex flex-col gap-3 mt-2">
       <div className="flex gap-2">
         <select
-          className="flex-1 border border-[#30363d] bg-[#0d1117] px-2 py-1.5 text-xs text-[#e6edf3] outline-none focus:border-[#58a6ff] font-mono"
+          className="flex-1 border border-border bg-canvas px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent font-mono"
           value={agentId}
           onChange={(e) => setAgentId(e.target.value)}
         >
@@ -133,7 +133,7 @@ function AddThreadForm({ personId, agents, onDone }: AddThreadFormProps) {
           ))}
         </select>
         <select
-          className="border border-[#30363d] bg-[#0d1117] px-2 py-1.5 text-xs text-[#e6edf3] outline-none focus:border-[#58a6ff] font-mono"
+          className="border border-border bg-canvas px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent font-mono"
           value={channel}
           onChange={(e) => setChannel(e.target.value as PersonThread['channel'])}
         >
@@ -143,7 +143,7 @@ function AddThreadForm({ personId, agents, onDone }: AddThreadFormProps) {
         </select>
       </div>
       <textarea
-        className="w-full border border-[#30363d] bg-[#0d1117] px-2 py-1.5 text-xs text-[#e6edf3] outline-none focus:border-[#58a6ff] resize-none font-mono"
+        className="w-full border border-border bg-canvas px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent resize-none font-mono"
         rows={2}
         placeholder="Summary (optional)"
         value={summary}
@@ -153,14 +153,14 @@ function AddThreadForm({ personId, agents, onDone }: AddThreadFormProps) {
         <button
           type="button"
           onClick={onDone}
-          className="border border-[#30363d] bg-[#21262d] px-2 py-1 text-xs text-[#e6edf3] hover:bg-[#30363d] transition-colors"
+          className="border border-border bg-surface-hover px-2 py-1 text-xs text-text-primary hover:bg-surface-hover transition-colors"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={addThread.isPending}
-          className="bg-[#1f6feb] border border-[#388bfd] px-2 py-1 text-xs font-medium text-white hover:bg-[#388bfd] disabled:opacity-50 transition-colors"
+          className="bg-accent border border-accent px-2 py-1 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
         >
           {addThread.isPending ? 'Adding…' : 'Add'}
         </button>
@@ -205,7 +205,7 @@ function ChannelHandles({ handles, onUpdate }: ChannelHandlesProps) {
     <div className="flex flex-col gap-2">
       {Object.entries(handles).map(([ch, handle]) => (
         <div key={ch} className="flex items-center gap-2">
-          <span className="text-xs font-mono text-[#6e7681] w-16 flex-shrink-0">{ch}</span>
+          <span className="text-xs font-mono text-text-tertiary w-16 flex-shrink-0">{ch}</span>
           <EditableField
             value={handle}
             placeholder="handle"
@@ -214,7 +214,7 @@ function ChannelHandles({ handles, onUpdate }: ChannelHandlesProps) {
           />
           <button
             onClick={() => handleRemove(ch)}
-            className="text-[#6e7681] hover:text-[#f85149] transition-colors flex-shrink-0"
+            className="text-text-tertiary hover:text-error transition-colors flex-shrink-0"
           >
             <X className="h-3 w-3" />
           </button>
@@ -224,7 +224,7 @@ function ChannelHandles({ handles, onUpdate }: ChannelHandlesProps) {
         <div className="flex items-center gap-1 mt-1">
           <select
             autoFocus
-            className="border border-[#30363d] bg-[#0d1117] px-1.5 py-0.5 text-xs text-[#e6edf3] outline-none focus:border-[#58a6ff] font-mono w-20 flex-shrink-0"
+            className="border border-border bg-canvas px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent font-mono w-20 flex-shrink-0"
             value={newChannel}
             onChange={(e) => setNewChannel(e.target.value)}
           >
@@ -234,7 +234,7 @@ function ChannelHandles({ handles, onUpdate }: ChannelHandlesProps) {
             ))}
           </select>
           <input
-            className="border border-[#30363d] bg-[#0d1117] px-1.5 py-0.5 text-xs text-[#e6edf3] outline-none focus:border-[#58a6ff] font-mono flex-1 min-w-0"
+            className="border border-border bg-canvas px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent font-mono flex-1 min-w-0"
             placeholder="handle"
             value={newHandle}
             onChange={(e) => setNewHandle(e.target.value)}
@@ -243,15 +243,15 @@ function ChannelHandles({ handles, onUpdate }: ChannelHandlesProps) {
               if (e.key === 'Escape') { setAddingChannel(false); setNewChannel(''); setNewHandle('') }
             }}
           />
-          <button onClick={handleAdd} className="text-[#3fb950] hover:text-[#56d364] transition-colors flex-shrink-0 text-xs font-mono">add</button>
-          <button onClick={() => { setAddingChannel(false); setNewChannel(''); setNewHandle('') }} className="text-[#6e7681] hover:text-[#e6edf3] transition-colors flex-shrink-0">
+          <button onClick={handleAdd} className="text-success hover:text-success transition-colors flex-shrink-0 text-xs font-mono">add</button>
+          <button onClick={() => { setAddingChannel(false); setNewChannel(''); setNewHandle('') }} className="text-text-tertiary hover:text-text-primary transition-colors flex-shrink-0">
             <X className="h-3 w-3" />
           </button>
         </div>
       ) : (
         <button
           onClick={() => setAddingChannel(true)}
-          className="self-start px-1.5 py-0.5 text-xs font-mono border border-dashed border-[#30363d] text-[#6e7681] hover:text-[#8b949e] hover:border-[#8b949e] transition-colors"
+          className="self-start px-1.5 py-0.5 text-xs font-mono border border-dashed border-border text-text-tertiary hover:text-text-secondary hover:border-text-secondary transition-colors"
         >
           + channel
         </button>
@@ -284,9 +284,9 @@ function LinkTaskForm({ personId, boards, linkedTaskIds, onDone }: LinkTaskFormP
   }
 
   return (
-    <form onSubmit={handleSubmit} className="border border-[#30363d] bg-[#0d1117] p-3 flex flex-col gap-2 mt-1">
+    <form onSubmit={handleSubmit} className="border border-border bg-canvas p-3 flex flex-col gap-2 mt-1">
       <select
-        className="border border-[#30363d] bg-[#0d1117] px-2 py-1.5 text-xs text-[#e6edf3] outline-none focus:border-[#58a6ff] font-mono w-full"
+        className="border border-border bg-canvas px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent font-mono w-full"
         value={boardId}
         onChange={(e) => { setBoardId(e.target.value); setTaskId('') }}
       >
@@ -295,7 +295,7 @@ function LinkTaskForm({ personId, boards, linkedTaskIds, onDone }: LinkTaskFormP
         ))}
       </select>
       <select
-        className="border border-[#30363d] bg-[#0d1117] px-2 py-1.5 text-xs text-[#e6edf3] outline-none focus:border-[#58a6ff] font-mono w-full"
+        className="border border-border bg-canvas px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent font-mono w-full"
         value={taskId}
         onChange={(e) => setTaskId(e.target.value)}
       >
@@ -308,14 +308,14 @@ function LinkTaskForm({ personId, boards, linkedTaskIds, onDone }: LinkTaskFormP
         <button
           type="button"
           onClick={onDone}
-          className="border border-[#30363d] bg-[#21262d] px-2 py-1 text-xs text-[#e6edf3] hover:bg-[#30363d] transition-colors font-mono"
+          className="border border-border bg-surface-hover px-2 py-1 text-xs text-text-primary hover:bg-surface-hover transition-colors font-mono"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={!taskId || linkTask.isPending}
-          className="bg-[#1f6feb] border border-[#388bfd] px-2 py-1 text-xs font-medium text-white hover:bg-[#388bfd] disabled:opacity-50 transition-colors"
+          className="bg-accent border border-accent px-2 py-1 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
         >
           {linkTask.isPending ? 'Linking…' : 'Link'}
         </button>
@@ -350,14 +350,14 @@ function PersonDetailPage() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#58a6ff]" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     )
   }
 
   if (isError || !data) {
     return (
-      <div className="flex h-64 items-center justify-center text-[#6e7681] font-mono">
+      <div className="flex h-64 items-center justify-center text-text-tertiary font-mono">
         person not found.
       </div>
     )
@@ -420,7 +420,7 @@ function PersonDetailPage() {
     <div className="flex flex-col gap-4 h-full">
       {/* back link */}
       <div>
-        <Link to="/people" className="inline-flex items-center gap-1.5 text-sm font-mono text-[#8b949e] hover:text-[#e6edf3] transition-colors">
+        <Link to="/people" className="inline-flex items-center gap-1.5 text-sm font-mono text-text-secondary hover:text-text-primary transition-colors">
           <ArrowLeft className="h-4 w-4" />
           people
         </Link>
@@ -431,10 +431,10 @@ function PersonDetailPage() {
         {/* left: threads timeline */}
         <div className="flex-1 flex flex-col gap-4 min-h-0">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-xs uppercase tracking-widest text-[#8b949e]">Threads</span>
+            <span className="font-mono text-xs uppercase tracking-widest text-text-secondary">Threads</span>
             <button
               onClick={() => setShowAddThread((v) => !v)}
-              className="inline-flex items-center gap-1 bg-[#21262d] border border-[#30363d] px-2 py-1 text-xs font-mono text-[#c9d1d9] hover:bg-[#30363d] transition-colors"
+              className="inline-flex items-center gap-1 bg-surface-hover border border-border px-2 py-1 text-xs font-mono text-text-primary hover:bg-surface-hover transition-colors"
             >
               <Plus className="h-3 w-3" />
               add thread
@@ -450,28 +450,28 @@ function PersonDetailPage() {
           )}
 
           {threads.length === 0 && !showAddThread && (
-            <div className="border border-[#30363d] bg-[#161b22] px-4 py-12 text-center">
-              <p className="font-mono text-sm text-[#6e7681]">no threads yet</p>
+            <div className="border border-border bg-surface px-4 py-12 text-center">
+              <p className="font-mono text-sm text-text-tertiary">no threads yet</p>
             </div>
           )}
 
           <div className="flex flex-col gap-2">
             {threads.map((thread) => (
-              <div key={thread.id} className="border border-[#30363d] bg-[#161b22] px-4 py-3 flex flex-col gap-2">
+              <div key={thread.id} className="border border-border bg-surface px-4 py-3 flex flex-col gap-2">
                 <div className="flex items-center gap-3">
                   <MessageSquare className={cn('h-4 w-4 flex-shrink-0', CHANNEL_COLORS[thread.channel].split(' ')[0])} />
                   <span className={cn('text-xs font-mono border px-1.5 py-0.5', CHANNEL_COLORS[thread.channel])}>
                     {thread.channel}
                   </span>
-                  <span className="text-xs font-mono text-[#58a6ff] bg-[#0d2341] border border-[#1f6feb] px-1.5 py-0.5">
+                  <span className="text-xs font-mono text-accent bg-accent-subtle border border-accent px-1.5 py-0.5">
                     {thread.agentId}
                   </span>
-                  <span className="ml-auto text-xs font-mono text-[#6e7681]">
+                  <span className="ml-auto text-xs font-mono text-text-tertiary">
                     {relativeTime(thread.lastMessageAt ?? thread.createdAt)}
                   </span>
                 </div>
                 {thread.summary && (
-                  <p className="text-sm text-[#8b949e] line-clamp-2">{thread.summary}</p>
+                  <p className="text-sm text-text-secondary line-clamp-2">{thread.summary}</p>
                 )}
               </div>
             ))}
@@ -481,10 +481,10 @@ function PersonDetailPage() {
         {/* right: person info panel */}
         <div className="w-72 flex flex-col gap-4 overflow-y-auto flex-shrink-0">
           {/* avatar + name + contact */}
-          <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-3">
+          <div className="border border-border bg-surface p-4 flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-16 h-16 flex items-center justify-center bg-[#21262d] border border-[#30363d] flex-shrink-0">
-                <span className="font-mono text-xl text-[#58a6ff]">{initials(person.name)}</span>
+              <div className="w-16 h-16 flex items-center justify-center bg-surface-hover border border-border flex-shrink-0">
+                <span className="font-mono text-xl text-accent">{initials(person.name)}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <EditableField
@@ -498,7 +498,7 @@ function PersonDetailPage() {
 
             {/* email */}
             <div className="flex items-center gap-2 group">
-              <span className="text-xs font-mono text-[#6e7681] w-10 flex-shrink-0">email</span>
+              <span className="text-xs font-mono text-text-tertiary w-10 flex-shrink-0">email</span>
               <EditableField
                 value={person.email ?? ''}
                 placeholder="add email"
@@ -508,7 +508,7 @@ function PersonDetailPage() {
               {person.email && (
                 <button
                   onClick={() => copyToClipboard(person.email!)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-[#6e7681] hover:text-[#e6edf3]"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-text-tertiary hover:text-text-primary"
                 >
                   <Copy className="h-3 w-3" />
                 </button>
@@ -517,7 +517,7 @@ function PersonDetailPage() {
 
             {/* phone */}
             <div className="flex items-center gap-2 group">
-              <span className="text-xs font-mono text-[#6e7681] w-10 flex-shrink-0">phone</span>
+              <span className="text-xs font-mono text-text-tertiary w-10 flex-shrink-0">phone</span>
               <EditableField
                 value={person.phone ?? ''}
                 placeholder="add phone"
@@ -527,7 +527,7 @@ function PersonDetailPage() {
               {person.phone && (
                 <button
                   onClick={() => copyToClipboard(person.phone!)}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity text-[#6e7681] hover:text-[#e6edf3]"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity text-text-tertiary hover:text-text-primary"
                 >
                   <Copy className="h-3 w-3" />
                 </button>
@@ -536,8 +536,8 @@ function PersonDetailPage() {
           </div>
 
           {/* channel handles */}
-          <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-2">
-            <span className="text-xs font-mono uppercase tracking-widest text-[#8b949e]">Channel Handles</span>
+          <div className="border border-border bg-surface p-4 flex flex-col gap-2">
+            <span className="text-xs font-mono uppercase tracking-widest text-text-secondary">Channel Handles</span>
             <ChannelHandles
               handles={person.channelHandles ?? {}}
               onUpdate={(channelHandles) => updatePerson.mutate({ channelHandles })}
@@ -545,12 +545,12 @@ function PersonDetailPage() {
           </div>
 
           {/* relationship context */}
-          <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-3">
-            <span className="text-xs font-mono uppercase tracking-widest text-[#8b949e]">Relationship</span>
+          <div className="border border-border bg-surface p-4 flex flex-col gap-3">
+            <span className="text-xs font-mono uppercase tracking-widest text-text-secondary">Relationship</span>
 
             {/* role */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-[#6e7681] w-16 flex-shrink-0">role</span>
+              <span className="text-xs font-mono text-text-tertiary w-16 flex-shrink-0">role</span>
               <EditableField
                 value={person.role ?? ''}
                 placeholder="job title / role"
@@ -561,7 +561,7 @@ function PersonDetailPage() {
 
             {/* relationship */}
             <div className="flex items-center gap-2 relative">
-              <span className="text-xs font-mono text-[#6e7681] w-16 flex-shrink-0">relation</span>
+              <span className="text-xs font-mono text-text-tertiary w-16 flex-shrink-0">relation</span>
               <div className="flex-1 relative">
                 <EditableField
                   value={person.relationship ?? ''}
@@ -571,16 +571,16 @@ function PersonDetailPage() {
                 />
                 <button
                   onClick={() => setShowRelSuggestions((v) => !v)}
-                  className="absolute right-0 top-0 text-[#6e7681] hover:text-[#8b949e] transition-colors text-xs font-mono"
+                  className="absolute right-0 top-0 text-text-tertiary hover:text-text-secondary transition-colors text-xs font-mono"
                 >
                   ▾
                 </button>
                 {showRelSuggestions && (
-                  <div className="absolute top-5 left-0 z-10 border border-[#30363d] bg-[#161b22] flex flex-col w-full shadow-lg">
+                  <div className="absolute top-5 left-0 z-10 border border-border bg-surface flex flex-col w-full shadow-lg">
                     {RELATIONSHIP_SUGGESTIONS.map((s) => (
                       <button
                         key={s}
-                        className="px-2 py-1 text-xs font-mono text-left text-[#e6edf3] hover:bg-[#21262d] transition-colors"
+                        className="px-2 py-1 text-xs font-mono text-left text-text-primary hover:bg-surface-hover transition-colors"
                         onClick={() => { updatePerson.mutate({ relationship: s }); setShowRelSuggestions(false) }}
                       >
                         {s}
@@ -593,12 +593,12 @@ function PersonDetailPage() {
 
             {/* priorities */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-mono text-[#6e7681]">priorities</span>
+              <span className="text-xs font-mono text-text-tertiary">priorities</span>
               <div className="flex flex-wrap gap-1">
                 {(person.priorities ?? []).map((p) => (
-                  <span key={p} className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-mono border border-[#1f6feb] text-[#58a6ff] bg-[#0d2341]">
+                  <span key={p} className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-mono border border-accent text-accent bg-accent-subtle">
                     {p}
-                    <button onClick={() => handleRemovePriority(p)} className="hover:text-[#e6edf3] transition-colors">
+                    <button onClick={() => handleRemovePriority(p)} className="hover:text-text-primary transition-colors">
                       <X className="h-2.5 w-2.5" />
                     </button>
                   </span>
@@ -607,7 +607,7 @@ function PersonDetailPage() {
                   <div className="flex items-center gap-1">
                     <input
                       autoFocus
-                      className="border border-[#30363d] bg-[#0d1117] px-1.5 py-0.5 text-xs text-[#e6edf3] outline-none focus:border-[#58a6ff] font-mono w-28"
+                      className="border border-border bg-canvas px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent font-mono w-28"
                       value={newPriority}
                       onChange={(e) => setNewPriority(e.target.value)}
                       onKeyDown={(e) => {
@@ -621,7 +621,7 @@ function PersonDetailPage() {
                 ) : (
                   <button
                     onClick={() => setAddingPriority(true)}
-                    className="px-1.5 py-0.5 text-xs font-mono border border-dashed border-[#30363d] text-[#6e7681] hover:text-[#8b949e] hover:border-[#8b949e] transition-colors"
+                    className="px-1.5 py-0.5 text-xs font-mono border border-dashed border-border text-text-tertiary hover:text-text-secondary hover:border-text-secondary transition-colors"
                   >
                     + priority
                   </button>
@@ -631,9 +631,9 @@ function PersonDetailPage() {
 
             {/* context */}
             <div className="flex flex-col gap-1.5">
-              <span className="text-xs font-mono text-[#6e7681]">context</span>
+              <span className="text-xs font-mono text-text-tertiary">context</span>
               <textarea
-                className="w-full border border-[#30363d] bg-[#0d1117] px-2 py-1.5 text-xs text-[#e6edf3] outline-none focus:border-[#58a6ff] resize-none font-mono"
+                className="w-full border border-border bg-canvas px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent resize-none font-mono"
                 rows={3}
                 placeholder="communication preferences, scope, background…"
                 value={currentContext}
@@ -644,10 +644,10 @@ function PersonDetailPage() {
           </div>
 
           {/* notes */}
-          <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-2">
-            <span className="text-xs font-mono uppercase tracking-widest text-[#8b949e]">Notes</span>
+          <div className="border border-border bg-surface p-4 flex flex-col gap-2">
+            <span className="text-xs font-mono uppercase tracking-widest text-text-secondary">Notes</span>
             <textarea
-              className="w-full border border-[#30363d] bg-[#0d1117] px-2 py-1.5 text-xs text-[#e6edf3] outline-none focus:border-[#58a6ff] resize-none font-mono"
+              className="w-full border border-border bg-canvas px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent resize-none font-mono"
               rows={4}
               placeholder="notes about this person…"
               value={currentNotes}
@@ -657,13 +657,13 @@ function PersonDetailPage() {
           </div>
 
           {/* tags */}
-          <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-2">
-            <span className="text-xs font-mono uppercase tracking-widest text-[#8b949e]">Tags</span>
+          <div className="border border-border bg-surface p-4 flex flex-col gap-2">
+            <span className="text-xs font-mono uppercase tracking-widest text-text-secondary">Tags</span>
             <div className="flex flex-wrap gap-1">
               {(person.tags ?? []).map((tag) => (
-                <span key={tag} className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-mono border border-[#30363d] text-[#8b949e]">
+                <span key={tag} className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs font-mono border border-border text-text-secondary">
                   {tag}
-                  <button onClick={() => handleRemoveTag(tag)} className="hover:text-[#e6edf3] transition-colors">
+                  <button onClick={() => handleRemoveTag(tag)} className="hover:text-text-primary transition-colors">
                     <X className="h-2.5 w-2.5" />
                   </button>
                 </span>
@@ -672,7 +672,7 @@ function PersonDetailPage() {
                 <div className="flex items-center gap-1">
                   <input
                     autoFocus
-                    className="border border-[#30363d] bg-[#0d1117] px-1.5 py-0.5 text-xs text-[#e6edf3] outline-none focus:border-[#58a6ff] font-mono w-24"
+                    className="border border-border bg-canvas px-1.5 py-0.5 text-xs text-text-primary outline-none focus:border-accent font-mono w-24"
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     onKeyDown={(e) => {
@@ -686,7 +686,7 @@ function PersonDetailPage() {
               ) : (
                 <button
                   onClick={() => setAddingTag(true)}
-                  className="px-1.5 py-0.5 text-xs font-mono border border-dashed border-[#30363d] text-[#6e7681] hover:text-[#8b949e] hover:border-[#8b949e] transition-colors"
+                  className="px-1.5 py-0.5 text-xs font-mono border border-dashed border-border text-text-tertiary hover:text-text-secondary hover:border-text-secondary transition-colors"
                 >
                   + tag
                 </button>
@@ -695,12 +695,12 @@ function PersonDetailPage() {
           </div>
 
           {/* linked tasks */}
-          <div className="border border-[#30363d] bg-[#161b22] overflow-hidden">
-            <div className="border-b border-[#30363d] px-4 py-2 flex items-center justify-between">
-              <span className="text-xs font-mono uppercase tracking-widest text-[#8b949e]">Linked Tasks</span>
+          <div className="border border-border bg-surface overflow-hidden">
+            <div className="border-b border-border px-4 py-2 flex items-center justify-between">
+              <span className="text-xs font-mono uppercase tracking-widest text-text-secondary">Linked Tasks</span>
               <button
                 onClick={() => setShowLinkTask((v) => !v)}
-                className="inline-flex items-center gap-1 text-xs font-mono text-[#6e7681] hover:text-[#e6edf3] transition-colors"
+                className="inline-flex items-center gap-1 text-xs font-mono text-text-tertiary hover:text-text-primary transition-colors"
               >
                 <Plus className="h-3 w-3" />
                 link
@@ -716,26 +716,26 @@ function PersonDetailPage() {
                 />
               </div>
             )}
-            <div className="flex flex-col divide-y divide-[#21262d]">
+            <div className="flex flex-col divide-y divide-border-subtle">
               {tasks.length === 0 && !showLinkTask && (
-                <p className="px-4 py-3 text-xs font-mono text-[#6e7681]">no tasks linked</p>
+                <p className="px-4 py-3 text-xs font-mono text-text-tertiary">no tasks linked</p>
               )}
               {tasks.map(({ task, boardName }) =>
                 task ? (
                   <div key={task.id} className="px-4 py-2 flex items-center justify-between gap-2">
                     <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                      <span className="text-xs text-[#e6edf3] truncate">{task.title}</span>
+                      <span className="text-xs text-text-primary truncate">{task.title}</span>
                       {boardName && (
-                        <span className="text-xs font-mono text-[#6e7681] truncate">{boardName}</span>
+                        <span className="text-xs font-mono text-text-tertiary truncate">{boardName}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className={cn('text-xs font-mono border px-1 py-0.5', TASK_STATUS_STYLES[task.status] ?? 'text-[#8b949e] border-[#30363d]')}>
+                      <span className={cn('text-xs font-mono border px-1 py-0.5', TASK_STATUS_STYLES[task.status] ?? 'text-text-secondary border-border')}>
                         {task.status}
                       </span>
                       <button
                         onClick={() => unlinkTask.mutate(task.id)}
-                        className="text-[#6e7681] hover:text-[#f85149] transition-colors"
+                        className="text-text-tertiary hover:text-error transition-colors"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -747,19 +747,19 @@ function PersonDetailPage() {
           </div>
 
           {/* linked projects */}
-          <div className="border border-[#30363d] bg-[#161b22] overflow-hidden">
-            <div className="border-b border-[#30363d] px-4 py-2">
-              <span className="text-xs font-mono uppercase tracking-widest text-[#8b949e]">Linked Projects</span>
+          <div className="border border-border bg-surface overflow-hidden">
+            <div className="border-b border-border px-4 py-2">
+              <span className="text-xs font-mono uppercase tracking-widest text-text-secondary">Linked Projects</span>
             </div>
-            <div className="flex flex-col divide-y divide-[#21262d]">
+            <div className="flex flex-col divide-y divide-border-subtle">
               {projects.length === 0 && (
-                <p className="px-4 py-3 text-xs font-mono text-[#6e7681]">no projects linked</p>
+                <p className="px-4 py-3 text-xs font-mono text-text-tertiary">no projects linked</p>
               )}
               {projects.map(({ project }) =>
                 project ? (
                   <div key={project.id} className="px-4 py-2 flex items-center justify-between gap-2">
-                    <span className="text-xs text-[#e6edf3] truncate flex-1">{project.name}</span>
-                    <span className="text-xs font-mono text-[#8b949e] flex-shrink-0">{project.progressPct}%</span>
+                    <span className="text-xs text-text-primary truncate flex-1">{project.name}</span>
+                    <span className="text-xs font-mono text-text-secondary flex-shrink-0">{project.progressPct}%</span>
                   </div>
                 ) : null
               )}
@@ -767,11 +767,11 @@ function PersonDetailPage() {
           </div>
 
           {/* delete */}
-          <div className="border border-[#30363d] bg-[#161b22] p-4">
+          <div className="border border-border bg-surface p-4">
             <button
               onClick={handleDelete}
               disabled={deletePerson.isPending}
-              className="w-full border border-[#f85149] bg-transparent px-3 py-1.5 text-xs font-mono text-[#f85149] hover:bg-[#f85149]/10 disabled:opacity-50 transition-colors"
+              className="w-full border border-error bg-transparent px-3 py-1.5 text-xs font-mono text-error hover:bg-error/10 disabled:opacity-50 transition-colors"
             >
               {deletePerson.isPending ? 'deleting…' : 'delete person'}
             </button>

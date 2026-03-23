@@ -31,13 +31,13 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   render() {
     if (this.state.error) {
       return (
-        <div className="flex items-center justify-center min-h-screen bg-[#0d1117] text-gray-200">
+        <div className="flex items-center justify-center min-h-screen bg-canvas text-text-primary">
           <div className="text-center max-w-md p-6">
             <h1 className="text-xl font-semibold mb-2">Something went wrong</h1>
-            <p className="text-gray-400 mb-4 text-sm">{this.state.error.message}</p>
+            <p className="text-text-secondary mb-4 text-sm">{this.state.error.message}</p>
             <button
               onClick={() => { this.setState({ error: null }); window.location.reload() }}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+              className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover text-sm"
             >
               Reload
             </button>
@@ -75,11 +75,11 @@ function MainLayout() {
   }, [isLoading, isError, navigate])
 
   if (isLoading || isError || !me) {
-    return <div className="min-h-screen bg-[#0d1117]" />
+    return <div className="min-h-screen bg-canvas" />
   }
 
   return (
-    <div className="flex h-screen bg-[#0d1117] overflow-hidden">
+    <div className="flex h-screen bg-canvas overflow-hidden">
       <Sidebar />
       <div className="flex flex-col flex-1 min-w-0">
         <Topbar user={me} />

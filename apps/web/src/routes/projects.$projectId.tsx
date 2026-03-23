@@ -50,17 +50,17 @@ const TASK_STATUS_LABELS: Record<Task['status'], string> = {
 }
 
 const STATUS_BADGE: Record<Task['status'], string> = {
-  inbox: 'text-[#8b949e] border-[#30363d]',
-  in_progress: 'text-[#58a6ff] border-[#1f6feb]',
-  review: 'text-[#a5a0ff] border-[#6e40c9]',
-  done: 'text-[#3fb950] border-[#238636]',
+  inbox: 'text-text-secondary border-border',
+  in_progress: 'text-accent border-accent',
+  review: 'text-purple-400 border-purple-600',
+  done: 'text-success border-success',
 }
 
 const PROJECT_STATUS_STYLES: Record<Project['status'], string> = {
-  planning: 'text-[#8b949e] border-[#30363d]',
-  active: 'text-[#58a6ff] border-[#1f6feb]',
-  paused: 'text-[#d29922] border-[#9e6a03]',
-  complete: 'text-[#3fb950] border-[#238636]',
+  planning: 'text-text-secondary border-border',
+  active: 'text-accent border-accent',
+  paused: 'text-warning border-warning',
+  complete: 'text-success border-success',
 }
 
 interface AllTasksPickerTask { id: string; title: string; boardId: string; status: string }
@@ -121,7 +121,7 @@ function ProjectTaskNode({ data }: { data: TaskNodeData }) {
           borderStyle: 'solid',
           borderRadius: 0,
         }}
-        className="px-3 py-2 text-xs text-[#6e7681]"
+        className="px-3 py-2 text-xs text-text-tertiary"
       >
         Unknown task
       </div>
@@ -155,10 +155,10 @@ function ProjectTaskNode({ data }: { data: TaskNodeData }) {
                     : '#6e7681',
           }}
         />
-        <span className="text-sm font-medium text-[#e6edf3] truncate">{task.title}</span>
+        <span className="text-sm font-medium text-text-primary truncate">{task.title}</span>
       </div>
       <div className="flex items-center justify-between mt-1">
-        <span className="text-xs text-[#8b949e]">{TASK_STATUS_LABELS[task.status]}</span>
+        <span className="text-xs text-text-secondary">{TASK_STATUS_LABELS[task.status]}</span>
         {data.agentName && (
           <AgentChip
             name={data.agentName}
@@ -216,31 +216,31 @@ function WorkspaceCard({ projectId, workspacePath }: { projectId: string; worksp
     : null
 
   return (
-    <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-3">
-      <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e]">Workspace</p>
+    <div className="border border-border bg-surface p-4 flex flex-col gap-3">
+      <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">Workspace</p>
       {workspacePath ? (
         <>
           <div className="flex items-start gap-2">
-            <code className="flex-1 text-xs font-mono text-[#e6edf3] break-all leading-relaxed">
+            <code className="flex-1 text-xs font-mono text-text-primary break-all leading-relaxed">
               {displayPath}
             </code>
             <button
               onClick={handleCopy}
-              className="flex-shrink-0 p-1 text-[#6e7681] hover:text-[#e6edf3] transition-colors"
+              className="flex-shrink-0 p-1 text-text-tertiary hover:text-text-primary transition-colors"
               title="Copy path"
             >
-              {copied ? <Check className="h-3.5 w-3.5 text-[#3fb950]" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
             </button>
           </div>
-          <p className="text-xs text-[#6e7681]">BRIEF.md · MEMORY.md · CONTEXT.md · TOOLS.md</p>
+          <p className="text-xs text-text-tertiary">BRIEF.md · MEMORY.md · CONTEXT.md · TOOLS.md</p>
         </>
       ) : (
         <div className="flex flex-col gap-2">
-          <p className="text-xs text-[#6e7681]">No workspace initialized.</p>
+          <p className="text-xs text-text-tertiary">No workspace initialized.</p>
           <button
             onClick={() => initWorkspace.mutate()}
             disabled={initWorkspace.isPending}
-            className="inline-flex items-center justify-center gap-1.5 border border-[#30363d] bg-[#21262d] px-3 py-1.5 text-xs text-[#e6edf3] hover:bg-[#30363d] disabled:opacity-40 transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 border border-border bg-surface-hover px-3 py-1.5 text-xs text-text-primary hover:bg-surface-hover disabled:opacity-40 transition-colors"
           >
             {initWorkspace.isPending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -334,7 +334,7 @@ function DagPanel({ tasks, agentMap }: DagPanelProps) {
 
   if (tasks.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full text-[#6e7681] text-sm">
+      <div className="flex items-center justify-center h-full text-text-tertiary text-sm">
         No tasks in this project yet.
       </div>
     )
@@ -387,14 +387,14 @@ function ProjectDetailPage() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#58a6ff]" />
+        <Loader2 className="h-8 w-8 animate-spin text-accent" />
       </div>
     )
   }
 
   if (isError) {
     return (
-      <div className="flex h-64 items-center justify-center text-[#6e7681]">
+      <div className="flex h-64 items-center justify-center text-text-tertiary">
         Failed to load project.
       </div>
     )
@@ -402,7 +402,7 @@ function ProjectDetailPage() {
 
   if (!data) {
     return (
-      <div className="flex h-64 items-center justify-center text-[#6e7681]">
+      <div className="flex h-64 items-center justify-center text-text-tertiary">
         Project not found.
       </div>
     )
@@ -421,10 +421,10 @@ function ProjectDetailPage() {
     <div className="flex flex-col gap-4 h-full">
       {/* back link + title */}
       <div className="flex items-center gap-3">
-        <Link to="/projects" className="text-[#8b949e] hover:text-[#e6edf3] transition-colors">
+        <Link to="/projects" className="text-text-secondary hover:text-text-primary transition-colors">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-xl font-semibold text-[#e6edf3]">{project.name}</h1>
+        <h1 className="text-xl font-semibold text-text-primary">{project.name}</h1>
         <span className={`inline-flex items-center px-1.5 py-0.5 text-xs font-mono border capitalize ${PROJECT_STATUS_STYLES[project.status]}`}>
           {project.status}
         </span>
@@ -434,7 +434,7 @@ function ProjectDetailPage() {
       <div className="flex flex-row gap-4 flex-1 min-h-0">
         {/* DAG panel */}
         <div
-          className="flex-1 border border-[#30363d] bg-[#161b22] overflow-hidden"
+          className="flex-1 border border-border bg-surface overflow-hidden"
           style={{ minHeight: 600 }}
         >
           <DagPanel tasks={tasks} agentMap={agentMap} />
@@ -443,30 +443,30 @@ function ProjectDetailPage() {
         {/* Right sidebar */}
         <div className="w-72 flex flex-col gap-4 overflow-y-auto">
           {/* Progress + status card */}
-          <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-4">
+          <div className="border border-border bg-surface p-4 flex flex-col gap-4">
             {/* Progress ring */}
             <div className="flex items-center gap-3">
               <div className="relative">
                 <ProgressRing pct={project.progressPct} size={64} />
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-mono font-medium text-[#e6edf3]">
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-mono font-medium text-text-primary">
                   {project.progressPct}%
                 </span>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e]">Progress</p>
-                <p className="text-sm font-mono text-[#e6edf3]">{project.progressPct}% complete</p>
+                <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">Progress</p>
+                <p className="text-sm font-mono text-text-primary">{project.progressPct}% complete</p>
               </div>
             </div>
 
             {/* Status */}
             <div>
-              <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#8b949e]">Status</label>
+              <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-text-secondary">Status</label>
               <select
                 value={project.status}
                 onChange={(e) =>
                   updateProject.mutate({ status: e.target.value as Project['status'] })
                 }
-                className="w-full border border-[#30363d] bg-[#0d1117] px-3 py-2 text-sm text-[#e6edf3] outline-none focus:border-[#58a6ff]"
+                className="w-full border border-border bg-canvas px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
               >
                 {(['planning', 'active', 'paused', 'complete'] as const).map((s) => (
                   <option key={s} value={s} className="capitalize">
@@ -479,8 +479,8 @@ function ProjectDetailPage() {
             {/* Target date */}
             {project.targetDate && (
               <div>
-                <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e]">Target Date</p>
-                <p className="text-sm font-mono text-[#e6edf3]">
+                <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">Target Date</p>
+                <p className="text-sm font-mono text-text-primary">
                   {new Date(project.targetDate).toLocaleDateString('en-US', {
                     month: 'long',
                     day: 'numeric',
@@ -493,7 +493,7 @@ function ProjectDetailPage() {
             {/* Orchestrator */}
             {orchestrator && (
               <div>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wider text-[#8b949e]">Orchestrator</p>
+                <p className="mb-1 text-xs font-medium uppercase tracking-wider text-text-secondary">Orchestrator</p>
                 <AgentChip emoji={'🤖'} name={orchestrator.name} />
               </div>
             )}
@@ -502,7 +502,7 @@ function ProjectDetailPage() {
             <button
               onClick={() => kickoff.mutate()}
               disabled={kickoff.isPending || !project.orchestratorAgentId}
-              className="mt-1 w-full inline-flex items-center justify-center gap-2 border border-[#238636] bg-[#238636] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#2ea043] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="mt-1 w-full inline-flex items-center justify-center gap-2 border border-success bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               {kickoff.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -517,12 +517,12 @@ function ProjectDetailPage() {
           <WorkspaceCard projectId={projectId} workspacePath={project.workspacePath} />
 
           {/* Task list */}
-          <div className="border border-[#30363d] bg-[#161b22] overflow-hidden">
-            <div className="border-b border-[#30363d] px-4 py-3 flex items-center justify-between">
-              <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e]">Tasks ({tasks.length})</p>
+          <div className="border border-border bg-surface overflow-hidden">
+            <div className="border-b border-border px-4 py-3 flex items-center justify-between">
+              <p className="text-xs font-medium uppercase tracking-wider text-text-secondary">Tasks ({tasks.length})</p>
               <button
                 onClick={() => setShowPicker((v) => !v)}
-                className="flex items-center justify-center h-5 w-5 border border-[#30363d] text-[#8b949e] hover:text-[#e6edf3] hover:border-[#58a6ff] transition-colors"
+                className="flex items-center justify-center h-5 w-5 border border-border text-text-secondary hover:text-text-primary hover:border-accent transition-colors"
                 title="Add task"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -530,11 +530,11 @@ function ProjectDetailPage() {
             </div>
 
             {tasks.length === 0 && !showPicker && (
-              <div className="px-4 py-6 flex flex-col items-center gap-2 text-[#6e7681] text-sm">
+              <div className="px-4 py-6 flex flex-col items-center gap-2 text-text-tertiary text-sm">
                 <span>No tasks yet.</span>
                 <button
                   onClick={() => setShowPicker(true)}
-                  className="text-xs text-[#58a6ff] hover:underline"
+                  className="text-xs text-accent hover:underline"
                 >
                   + add tasks
                 </button>
@@ -542,13 +542,13 @@ function ProjectDetailPage() {
             )}
 
             {tasks.length > 0 && (
-              <div className="flex flex-col divide-y divide-[#21262d]">
+              <div className="flex flex-col divide-y divide-border-subtle">
                 {[...tasks]
                   .sort((a, b) => a.pt.position - b.pt.position)
                   .map(({ pt, task }) => (
                     <div key={pt.taskId} className="px-4 py-3 flex flex-col gap-1.5">
                       <div className="flex items-start justify-between gap-2">
-                        <span className="text-sm text-[#e6edf3] leading-snug">{task?.title ?? pt.taskId}</span>
+                        <span className="text-sm text-text-primary leading-snug">{task?.title ?? pt.taskId}</span>
                         <div className="flex items-center gap-1.5 flex-shrink-0">
                           {task && (
                             <span className={`inline-flex items-center px-1.5 py-0.5 text-xs font-mono border ${STATUS_BADGE[task.status]}`}>
@@ -557,7 +557,7 @@ function ProjectDetailPage() {
                           )}
                           <button
                             onClick={() => removeTask.mutate(pt.taskId)}
-                            className="text-[#6e7681] hover:text-[#f85149] transition-colors"
+                            className="text-text-tertiary hover:text-error transition-colors"
                             title="Remove from project"
                           >
                             <X className="h-3 w-3" />
@@ -565,7 +565,7 @@ function ProjectDetailPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium uppercase tracking-wider text-[#6e7681]">Mode:</span>
+                        <span className="text-xs font-medium uppercase tracking-wider text-text-tertiary">Mode:</span>
                         <button
                           onClick={() =>
                             updateTask.mutate({
@@ -575,8 +575,8 @@ function ProjectDetailPage() {
                           }
                           className={`px-1.5 py-0.5 text-xs font-mono border transition-colors ${
                             pt.executionMode === 'sequential'
-                              ? 'text-[#58a6ff] border-[#1f6feb] hover:bg-[#0d2341]'
-                              : 'text-[#d29922] border-[#9e6a03] hover:bg-[#271700]'
+                              ? 'text-accent border-accent hover:bg-accent-subtle'
+                              : 'text-warning border-warning hover:bg-warning-subtle'
                           }`}
                         >
                           {pt.executionMode}
@@ -589,41 +589,41 @@ function ProjectDetailPage() {
 
             {/* Task picker */}
             {showPicker && (
-              <div className="border-t border-[#30363d]">
-                <div className="px-3 py-2 flex items-center gap-2 border-b border-[#21262d]">
-                  <Search className="h-3.5 w-3.5 text-[#6e7681] flex-shrink-0" />
+              <div className="border-t border-border">
+                <div className="px-3 py-2 flex items-center gap-2 border-b border-border-subtle">
+                  <Search className="h-3.5 w-3.5 text-text-tertiary flex-shrink-0" />
                   <input
                     autoFocus
                     value={taskSearch}
                     onChange={(e) => setTaskSearch(e.target.value)}
                     placeholder="Search tasks…"
-                    className="flex-1 bg-transparent text-xs text-[#e6edf3] placeholder-[#6e7681] outline-none"
+                    className="flex-1 bg-transparent text-xs text-text-primary placeholder-text-tertiary outline-none"
                   />
                   <button
                     onClick={() => { setShowPicker(false); setTaskSearch('') }}
-                    className="text-[#6e7681] hover:text-[#e6edf3] transition-colors"
+                    className="text-text-tertiary hover:text-text-primary transition-colors"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
                 <div className="flex flex-col overflow-y-auto" style={{ maxHeight: 200 }}>
                   {pickerItems.length === 0 ? (
-                    <p className="px-4 py-3 text-xs text-[#6e7681]">
+                    <p className="px-4 py-3 text-xs text-text-tertiary">
                       {taskSearch ? 'No matching tasks.' : 'All tasks already added.'}
                     </p>
                   ) : (
                     pickerItems.map((t) => (
-                      <div key={t.id} className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-[#21262d]">
+                      <div key={t.id} className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-surface-hover">
                         <div className="flex flex-col min-w-0">
-                          <span className="text-xs text-[#e6edf3] truncate">{t.title}</span>
-                          <span className={`text-xs font-mono ${STATUS_BADGE[t.status as Task['status']] ?? 'text-[#8b949e]'}`}>
+                          <span className="text-xs text-text-primary truncate">{t.title}</span>
+                          <span className={`text-xs font-mono ${STATUS_BADGE[t.status as Task['status']] ?? 'text-text-secondary'}`}>
                             {t.status}
                           </span>
                         </div>
                         <button
                           onClick={() => addTask.mutate({ taskId: t.id, executionMode: 'sequential' })}
                           disabled={addTask.isPending}
-                          className="flex-shrink-0 px-2 py-0.5 text-xs border border-[#238636] text-[#3fb950] hover:bg-[#0d2818] disabled:opacity-40 transition-colors"
+                          className="flex-shrink-0 px-2 py-0.5 text-xs border border-success text-success hover:bg-success-subtle disabled:opacity-40 transition-colors"
                         >
                           Add
                         </button>

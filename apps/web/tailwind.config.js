@@ -5,19 +5,36 @@ export default {
   theme: {
     extend: {
       colors: {
-        canvas: '#0d1117',
-        surface: '#161b22',
-        'surface-elevated': '#21262d',
-        border: '#30363d',
-        'border-muted': '#21262d',
-        accent: '#58a6ff',
-        success: '#3fb950',
-        warning: '#d29922',
-        danger: '#f85149',
-        purple: '#a5a0ff',
-        primary: {
-          DEFAULT: '#1f6feb',
-          foreground: '#ffffff',
+        canvas: 'hsl(var(--color-canvas))',
+        surface: {
+          DEFAULT: 'hsl(var(--color-surface))',
+          hover: 'hsl(var(--color-surface-hover))',
+        },
+        sidebar: 'hsl(var(--color-sidebar))',
+        border: {
+          DEFAULT: 'hsl(var(--color-border))',
+          subtle: 'hsl(var(--color-border-subtle))',
+          strong: 'hsl(var(--color-border-strong))',
+        },
+        'text-primary': 'hsl(var(--color-text-primary))',
+        'text-secondary': 'hsl(var(--color-text-secondary))',
+        'text-tertiary': 'hsl(var(--color-text-tertiary))',
+        accent: {
+          DEFAULT: 'hsl(var(--color-accent))',
+          hover: 'hsl(var(--color-accent-hover))',
+          subtle: 'hsl(var(--color-accent-subtle))',
+        },
+        success: {
+          DEFAULT: 'hsl(var(--color-success))',
+          subtle: 'hsl(var(--color-success-subtle))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--color-warning))',
+          subtle: 'hsl(var(--color-warning-subtle))',
+        },
+        error: {
+          DEFAULT: 'hsl(var(--color-error))',
+          subtle: 'hsl(var(--color-error-subtle))',
         },
       },
       fontFamily: {

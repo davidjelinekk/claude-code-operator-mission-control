@@ -10,16 +10,16 @@ interface KanbanCardProps {
 }
 
 const outcomeBadge: Record<NonNullable<Task['outcome']>, { label: string; className: string }> = {
-  success:   { label: 'SUCCESS',   className: 'text-[#3fb950] border-[#238636] bg-[#238636]/10' },
-  failed:    { label: 'FAILED',    className: 'text-[#f85149] border-[#da3633] bg-[#da3633]/15' },
-  partial:   { label: 'PARTIAL',   className: 'text-[#d29922] border-[#9e6a03] bg-[#9e6a03]/10' },
-  abandoned: { label: 'ABANDONED', className: 'text-[#6e7681] border-[#30363d]' },
+  success:   { label: 'SUCCESS',   className: 'text-success border-success/60 bg-success-subtle' },
+  failed:    { label: 'FAILED',    className: 'text-error border-error/60 bg-error-subtle' },
+  partial:   { label: 'PARTIAL',   className: 'text-warning border-warning/60 bg-warning-subtle' },
+  abandoned: { label: 'ABANDONED', className: 'text-text-tertiary border-border' },
 }
 
 const priorityBadge: Record<Task['priority'], { label: string; className: string; borderLeft: string }> = {
-  high: { label: 'HIGH', className: 'text-[#f85149] border border-[#6e0000]', borderLeft: 'border-l-2 border-l-[#f85149]' },
-  medium: { label: 'MED', className: 'text-[#d29922] border border-[#9e6a03]', borderLeft: 'border-l-2 border-l-[#d29922]' },
-  low: { label: 'LOW', className: 'text-[#8b949e] border border-[#30363d]', borderLeft: 'border-l-2 border-l-[#30363d]' },
+  high: { label: 'HIGH', className: 'text-error border border-error/40', borderLeft: 'border-l-2 border-l-error' },
+  medium: { label: 'MED', className: 'text-warning border border-warning/40', borderLeft: 'border-l-2 border-l-warning' },
+  low: { label: 'LOW', className: 'text-text-secondary border border-border', borderLeft: 'border-l-2 border-l-border' },
 }
 
 function formatRelativeDate(dateStr: string): { label: string; overdue: boolean } {
@@ -80,20 +80,20 @@ export function KanbanCard({ task, agents, isDragging, onClick }: KanbanCardProp
     <div
       onClick={onClick}
       className={cn(
-        'border border-[#30363d] p-3 cursor-pointer select-none transition-colors',
+        'border border-border p-3 cursor-pointer select-none transition-colors',
         priority.borderLeft,
-        'hover:border-[#58a6ff]',
+        'hover:border-accent',
         isDragging && 'opacity-50',
       )}
       style={{
         background: task.status === 'in_progress'
-          ? 'linear-gradient(135deg, #1a1600 0%, #161b22 40%)'
+          ? 'linear-gradient(135deg, hsl(var(--color-warning) / 0.08) 0%, hsl(var(--color-surface)) 40%)'
           : task.status === 'done'
-          ? 'linear-gradient(135deg, #0d1a0d 0%, #161b22 40%)'
-          : '#161b22',
+          ? 'linear-gradient(135deg, hsl(var(--color-success) / 0.08) 0%, hsl(var(--color-surface)) 40%)'
+          : 'hsl(var(--color-surface))',
       }}
     >
-      <p className="text-sm text-[#e6edf3] font-medium line-clamp-2 leading-snug mb-2">{task.title}</p>
+      <p className="text-sm text-text-primary font-medium line-clamp-2 leading-snug mb-2">{task.title}</p>
 
       <div className="flex flex-wrap gap-1.5 items-center">
         <span className={cn('text-[10px] font-mono font-semibold px-1.5 py-0.5', priority.className)}>
@@ -101,13 +101,13 @@ export function KanbanCard({ task, agents, isDragging, onClick }: KanbanCardProp
         </span>
 
         {task.depCount != null && task.depCount > 0 && (
-          <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 text-[#8b949e] border border-[#30363d]">
+          <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 text-text-secondary border border-border">
             BLOCKED
           </span>
         )}
 
         {task.pendingApproval && (
-          <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 text-[#d29922] border border-[#9e6a03]">
+          <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 text-warning border border-warning/40">
             APPROVAL
           </span>
         )}
@@ -125,7 +125,7 @@ export function KanbanCard({ task, agents, isDragging, onClick }: KanbanCardProp
             </span>
           ))}
           {task.tags.length > 3 && (
-            <span className="text-[9px] font-mono text-[#6e7681]">+{task.tags.length - 3}</span>
+            <span className="text-[9px] font-mono text-text-tertiary">+{task.tags.length - 3}</span>
           )}
         </div>
       )}
@@ -133,7 +133,7 @@ export function KanbanCard({ task, agents, isDragging, onClick }: KanbanCardProp
       {(assignedAgent || dueDateInfo) && (
         <div className="flex items-center justify-between mt-2 gap-2">
           {assignedAgent ? (
-            <span className="inline-flex items-center gap-1 text-xs text-[#8b949e] bg-[#0d1117] border border-[#30363d] px-1.5 py-0.5 truncate max-w-[120px] font-mono">
+            <span className="inline-flex items-center gap-1 text-xs text-text-secondary bg-canvas border border-border px-1.5 py-0.5 truncate max-w-[120px] font-mono">
               <span>{'🤖'}</span>
               <span className="truncate">{assignedAgent.name}</span>
             </span>
@@ -142,7 +142,7 @@ export function KanbanCard({ task, agents, isDragging, onClick }: KanbanCardProp
           )}
 
           {dueDateInfo && (
-            <span className={cn('text-[11px] font-mono font-medium flex-shrink-0', dueDateInfo.overdue ? 'text-[#f85149]' : 'text-[#6e7681]')}>
+            <span className={cn('text-[11px] font-mono font-medium flex-shrink-0', dueDateInfo.overdue ? 'text-error' : 'text-text-tertiary')}>
               {dueDateInfo.label}
             </span>
           )}
@@ -159,7 +159,7 @@ export function KanbanCard({ task, agents, isDragging, onClick }: KanbanCardProp
             <span />
           )}
           {task.status === 'done' && task.completedAt && (
-            <span className="text-[10px] font-mono text-[#6e7681] flex-shrink-0">
+            <span className="text-[10px] font-mono text-text-tertiary flex-shrink-0">
               {formatCompletedAt(task.completedAt)}
             </span>
           )}
@@ -170,7 +170,7 @@ export function KanbanCard({ task, agents, isDragging, onClick }: KanbanCardProp
         <div className="mt-1.5">
           <span className={cn(
             'text-[10px] font-mono',
-            statusTime.warn ? 'text-[#d29922]' : 'text-[#6e7681]',
+            statusTime.warn ? 'text-warning' : 'text-text-tertiary',
           )}>
             {statusTime.label}
           </span>

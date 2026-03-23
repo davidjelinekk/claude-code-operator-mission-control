@@ -100,7 +100,7 @@ function AddTaskForm({ boardId, status, onDone }: { boardId: string; status: Sta
         onKeyDown={handleKeyDown}
         onBlur={onDone}
         placeholder="Task title… (Enter to save)"
-        className="w-full bg-[#0d1117] border border-[#58a6ff] px-3 py-2 text-sm text-[#e6edf3] placeholder-[#6e7681] focus:outline-none"
+        className="w-full bg-canvas border border-accent px-3 py-2 text-sm text-text-primary placeholder-text-tertiary focus:outline-none"
       />
     </div>
   )
@@ -138,11 +138,11 @@ function KanbanColumn({
 
   return (
     <div
-      className="flex flex-col bg-[#0d1117] border transition-colors min-w-0"
+      className="flex flex-col bg-canvas border transition-colors min-w-0"
       style={{ borderColor: isOver ? COLUMN_ACCENT[col.id].border : '#30363d' }}
     >
       <div
-        className="flex items-center justify-between px-4 py-3 border-b border-[#30363d]"
+        className="flex items-center justify-between px-4 py-3 border-b border-border"
         style={{ background: `linear-gradient(to right, ${COLUMN_ACCENT[col.id].glow}, transparent)` }}
       >
         <div className="flex items-center gap-2">
@@ -170,7 +170,7 @@ function KanbanColumn({
       </div>
 
       {col.id === 'review' && (
-        <div className="flex border-b border-[#21262d] px-2 pt-1.5 bg-[#161b22]">
+        <div className="flex border-b border-border-subtle px-2 pt-1.5 bg-surface">
           {(['all', 'approval', 'blocked'] as ReviewFilter[]).map((f) => (
             <button
               key={f}
@@ -178,8 +178,8 @@ function KanbanColumn({
               className={cn(
                 'px-2 pb-1.5 text-[10px] font-mono uppercase tracking-wider transition-colors',
                 reviewFilter === f
-                  ? 'text-[#58a6ff] border-b border-[#58a6ff]'
-                  : 'text-[#6e7681] hover:text-[#8b949e]',
+                  ? 'text-accent border-b border-accent'
+                  : 'text-text-tertiary hover:text-text-secondary',
               )}
             >
               {f}
@@ -202,7 +202,7 @@ function KanbanColumn({
       <div className="px-2 pb-2">
         <button
           onClick={() => setAdding(true)}
-          className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-[#6e7681] hover:text-[#8b949e] hover:bg-[#161b22] transition-colors"
+          className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-text-tertiary hover:text-text-secondary hover:bg-surface transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
           Add task
@@ -221,7 +221,7 @@ function PlanningPanel({ task }: { task: Task }) {
   const submitAnswer = useSubmitPlanningAnswer(task.id)
   const [answer, setAnswer] = useState('')
 
-  if (isLoading) return <p className="text-xs font-mono text-[#6e7681]">loading planning…</p>
+  if (isLoading) return <p className="text-xs font-mono text-text-tertiary">loading planning…</p>
   if (!session) return null
 
   const messages = session.messages ?? []
@@ -237,24 +237,24 @@ function PlanningPanel({ task }: { task: Task }) {
   if (session.status === 'completed') {
     const spec = session.planningSpec as { title?: string; summary?: string; deliverables?: string[] } | null
     return (
-      <div className="space-y-3 border border-[#3fb950]/30 bg-[#3fb950]/5 px-3 py-3 mt-3">
+      <div className="space-y-3 border border-success/30 bg-success/5 px-3 py-3 mt-3">
         <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-3.5 w-3.5 text-[#3fb950]" />
-          <span className="text-[11px] font-mono text-[#3fb950] font-semibold uppercase tracking-wider">Planning complete</span>
+          <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+          <span className="text-[11px] font-mono text-success font-semibold uppercase tracking-wider">Planning complete</span>
         </div>
         {spec && (
           <div className="space-y-1.5">
             {spec.title && (
-              <p className="text-xs font-mono text-[#e6edf3] font-semibold">{spec.title}</p>
+              <p className="text-xs font-mono text-text-primary font-semibold">{spec.title}</p>
             )}
             {spec.summary && (
-              <p className="text-xs text-[#8b949e]">{spec.summary}</p>
+              <p className="text-xs text-text-secondary">{spec.summary}</p>
             )}
             {(spec.deliverables ?? []).length > 0 && (
               <ul className="space-y-0.5 pt-1">
                 {(spec.deliverables ?? []).map((d, i) => (
-                  <li key={i} className="text-[11px] font-mono text-[#8b949e] flex gap-1.5">
-                    <span className="text-[#3fb950]">›</span>{d}
+                  <li key={i} className="text-[11px] font-mono text-text-secondary flex gap-1.5">
+                    <span className="text-success">›</span>{d}
                   </li>
                 ))}
               </ul>
@@ -263,10 +263,10 @@ function PlanningPanel({ task }: { task: Task }) {
         )}
         {(session.suggestedAgents ?? []).length > 0 && (
           <div>
-            <p className="text-[10px] font-mono uppercase tracking-wider text-[#6e7681] mb-1">Suggested agents</p>
+            <p className="text-[10px] font-mono uppercase tracking-wider text-text-tertiary mb-1">Suggested agents</p>
             <div className="flex flex-wrap gap-1.5">
               {(session.suggestedAgents ?? []).map((a) => (
-                <span key={a.name} className="text-[11px] font-mono text-[#8b949e] border border-[#30363d] px-2 py-0.5">
+                <span key={a.name} className="text-[11px] font-mono text-text-secondary border border-border px-2 py-0.5">
                   {a.avatar_emoji ? `${a.avatar_emoji} ` : ''}{a.name}
                 </span>
               ))}
@@ -278,19 +278,19 @@ function PlanningPanel({ task }: { task: Task }) {
   }
 
   return (
-    <div className="space-y-3 border border-[#1f4f8a]/50 bg-[#1f4f8a]/5 px-3 py-3 mt-3">
+    <div className="space-y-3 border border-accent/50 bg-accent/5 px-3 py-3 mt-3">
       <div className="flex items-center gap-2">
-        <BrainCircuit className="h-3.5 w-3.5 text-[#58a6ff]" />
-        <span className="text-[11px] font-mono text-[#58a6ff] font-semibold uppercase tracking-wider">Planning in progress</span>
+        <BrainCircuit className="h-3.5 w-3.5 text-accent" />
+        <span className="text-[11px] font-mono text-accent font-semibold uppercase tracking-wider">Planning in progress</span>
       </div>
       {lastAgentMsg && (
-        <p className="text-sm text-[#e6edf3] leading-relaxed">{lastAgentMsg.content}</p>
+        <p className="text-sm text-text-primary leading-relaxed">{lastAgentMsg.content}</p>
       )}
       {messages.length > 1 && (
-        <div className="space-y-1 max-h-32 overflow-y-auto border-t border-[#1f4f8a]/30 pt-2">
+        <div className="space-y-1 max-h-32 overflow-y-auto border-t border-accent/30 pt-2">
           {messages.slice(0, -1).map((m, i) => (
-            <div key={i} className={cn('text-[11px] font-mono px-1', m.role === 'agent' ? 'text-[#58a6ff]' : 'text-[#8b949e]')}>
-              <span className="text-[#6e7681]">{m.role === 'agent' ? 'agent' : 'you'}:{' '}</span>{m.content}
+            <div key={i} className={cn('text-[11px] font-mono px-1', m.role === 'agent' ? 'text-accent' : 'text-text-secondary')}>
+              <span className="text-text-tertiary">{m.role === 'agent' ? 'agent' : 'you'}:{' '}</span>{m.content}
             </div>
           ))}
         </div>
@@ -300,12 +300,12 @@ function PlanningPanel({ task }: { task: Task }) {
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           placeholder="Your answer…"
-          className="flex-1 bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff]"
+          className="flex-1 bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent"
         />
         <button
           type="submit"
           disabled={!answer.trim() || submitAnswer.isPending}
-          className="px-3 py-2 text-xs font-mono text-white bg-[#1f6feb] border border-[#388bfd] hover:bg-[#388bfd] disabled:opacity-50 transition-colors"
+          className="px-3 py-2 text-xs font-mono text-white bg-accent border border-accent hover:bg-accent disabled:opacity-50 transition-colors"
         >
           {submitAnswer.isPending ? '…' : 'Answer'}
         </button>
@@ -361,15 +361,15 @@ function DetailTab({ task, agents, onClose }: { task: Task; agents: ReturnType<t
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-1">Title</label>
+        <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-1">Title</label>
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm text-[#e6edf3] focus:outline-none focus:border-[#58a6ff]"
+          className="w-full bg-canvas border border-border px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent"
         />
       </div>
       <div>
-        <label className="block text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-1">Description</label>
+        <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-1">Description</label>
         <textarea
           ref={useCallback((el: HTMLTextAreaElement | null) => {
             if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px' }
@@ -380,16 +380,16 @@ function DetailTab({ task, agents, onClose }: { task: Task; agents: ReturnType<t
             const el = e.target; el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'
           }}
           rows={2}
-          className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm text-[#e6edf3] focus:outline-none focus:border-[#58a6ff] resize-none overflow-hidden"
+          className="w-full bg-canvas border border-border px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent resize-none overflow-hidden"
         />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-1">Priority</label>
+          <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-1">Priority</label>
           <select
             value={priority}
             onChange={(e) => setPriority(e.target.value as Task['priority'])}
-            className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm text-[#e6edf3] focus:outline-none focus:border-[#58a6ff]"
+            className="w-full bg-canvas border border-border px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent"
           >
             <option value="low">Low</option>
             <option value="medium">Medium</option>
@@ -397,22 +397,22 @@ function DetailTab({ task, agents, onClose }: { task: Task; agents: ReturnType<t
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-1">Due Date</label>
+          <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-1">Due Date</label>
           <input
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm text-[#e6edf3] focus:outline-none focus:border-[#58a6ff]"
+            className="w-full bg-canvas border border-border px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent"
           />
         </div>
       </div>
       {agents && (
         <div>
-          <label className="block text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-1">Assignee</label>
+          <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-1">Assignee</label>
           <select
             value={assignedAgentId}
             onChange={(e) => setAssignedAgentId(e.target.value)}
-            className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm text-[#e6edf3] focus:outline-none focus:border-[#58a6ff]"
+            className="w-full bg-canvas border border-border px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-accent"
           >
             <option value="">Unassigned</option>
             {agents.map((a) => (
@@ -423,17 +423,17 @@ function DetailTab({ task, agents, onClose }: { task: Task; agents: ReturnType<t
       )}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-1">Outcome</label>
+          <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-1">Outcome</label>
           <select
             value={outcome ?? ''}
             onChange={(e) => setOutcome((e.target.value as Task['outcome']) || null)}
             className={cn(
-              'w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm focus:outline-none focus:border-[#58a6ff]',
-              outcome === 'success' && 'text-[#3fb950]',
-              outcome === 'failed' && 'text-[#f85149]',
-              outcome === 'partial' && 'text-[#d29922]',
-              outcome === 'abandoned' && 'text-[#6e7681]',
-              !outcome && 'text-[#e6edf3]',
+              'w-full bg-canvas border border-border px-3 py-2 text-sm focus:outline-none focus:border-accent',
+              outcome === 'success' && 'text-success',
+              outcome === 'failed' && 'text-error',
+              outcome === 'partial' && 'text-warning',
+              outcome === 'abandoned' && 'text-text-tertiary',
+              !outcome && 'text-text-primary',
             )}
           >
             <option value="">None</option>
@@ -445,8 +445,8 @@ function DetailTab({ task, agents, onClose }: { task: Task; agents: ReturnType<t
         </div>
         {task.completedAt && (
           <div>
-            <label className="block text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-1">Completed</label>
-            <p className="px-3 py-2 text-sm font-mono text-[#8b949e] bg-[#0d1117] border border-[#30363d]">
+            <label className="block text-xs font-medium uppercase tracking-wider text-text-secondary mb-1">Completed</label>
+            <p className="px-3 py-2 text-sm font-mono text-text-secondary bg-canvas border border-border">
               {new Date(task.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
             </p>
           </div>
@@ -458,14 +458,14 @@ function DetailTab({ task, agents, onClose }: { task: Task; agents: ReturnType<t
             <button
               onClick={handleStartPlanning}
               disabled={startPlanning.isPending}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono text-[#58a6ff] border border-[#1f4f8a] hover:bg-[#1f4f8a]/30 disabled:opacity-50 transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-mono text-accent border border-accent hover:bg-accent/30 disabled:opacity-50 transition-colors"
             >
               <BrainCircuit className="h-3.5 w-3.5" />
               {startPlanning.isPending ? 'Starting…' : 'Start Planning'}
             </button>
           )}
           {planningMsg && (
-            <p className="mt-1.5 text-[11px] font-mono text-center text-[#f85149]">
+            <p className="mt-1.5 text-[11px] font-mono text-center text-error">
               {planningMsg}
             </p>
           )}
@@ -475,35 +475,35 @@ function DetailTab({ task, agents, onClose }: { task: Task; agents: ReturnType<t
       <div className="flex items-center justify-between pt-2">
         <button
           onClick={handleDelete}
-          className="text-xs text-[#f85149] hover:text-[#ff7b72] transition-colors"
+          className="text-xs text-error hover:text-error transition-colors"
         >
           Delete task
         </button>
         <button
           onClick={handleSave}
           disabled={updateTask.isPending}
-          className="px-3 py-1.5 text-sm font-medium bg-[#1f6feb] border border-[#388bfd] text-white hover:bg-[#388bfd] disabled:opacity-50 transition-colors"
+          className="px-3 py-1.5 text-sm font-medium bg-accent border border-accent text-white hover:bg-accent disabled:opacity-50 transition-colors"
         >
           {updateTask.isPending ? 'Saving…' : 'Save'}
         </button>
       </div>
       {task.status !== 'done' && (
-        <div className="pt-3 border-t border-[#21262d]">
+        <div className="pt-3 border-t border-border-subtle">
           {showCancelConfirm ? (
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[11px] text-[#f85149]">cancel this task?</span>
+              <span className="font-mono text-[11px] text-error">cancel this task?</span>
               <button
                 onClick={() => {
                   cancelTask.mutate({ id: task.id })
                   setShowCancelConfirm(false)
                 }}
-                className="px-2.5 py-1 font-mono text-[11px] text-[#f85149] border border-[#da3633]/50 hover:bg-[#da3633]/10 transition-colors"
+                className="px-2.5 py-1 font-mono text-[11px] text-error border border-error/50 hover:bg-error/10 transition-colors"
               >
                 confirm
               </button>
               <button
                 onClick={() => setShowCancelConfirm(false)}
-                className="px-2.5 py-1 font-mono text-[11px] text-[#6e7681] border border-[#30363d] hover:text-[#8b949e] transition-colors"
+                className="px-2.5 py-1 font-mono text-[11px] text-text-tertiary border border-border hover:text-text-secondary transition-colors"
               >
                 no
               </button>
@@ -511,7 +511,7 @@ function DetailTab({ task, agents, onClose }: { task: Task; agents: ReturnType<t
           ) : (
             <button
               onClick={() => setShowCancelConfirm(true)}
-              className="px-2.5 py-1 font-mono text-[11px] text-[#f85149] border border-[#da3633]/50 hover:bg-[#da3633]/10 transition-colors"
+              className="px-2.5 py-1 font-mono text-[11px] text-error border border-error/50 hover:bg-error/10 transition-colors"
             >
               Cancel task
             </button>
@@ -555,19 +555,19 @@ function DepsTab({ task, snapshot }: { task: Task; snapshot: BoardSnapshot }) {
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-2">Blocked by</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-2">Blocked by</p>
         {!deps || deps.blockedBy.length === 0 ? (
-          <p className="text-xs text-[#6e7681] italic">No dependencies</p>
+          <p className="text-xs text-text-tertiary italic">No dependencies</p>
         ) : (
           <div className="space-y-1.5">
             {deps.blockedBy.map((dep) => {
               const depTask = snapshot.tasks.find((t) => t.id === dep.dependsOnTaskId)
               return (
-                <div key={dep.id} className="flex items-center justify-between bg-[#0d1117] border border-[#30363d] px-3 py-2">
-                  <span className="text-sm text-[#e6edf3] truncate">{depTask?.title ?? dep.dependsOnTaskId}</span>
+                <div key={dep.id} className="flex items-center justify-between bg-canvas border border-border px-3 py-2">
+                  <span className="text-sm text-text-primary truncate">{depTask?.title ?? dep.dependsOnTaskId}</span>
                   <button
                     onClick={() => handleRemoveDep(dep.id)}
-                    className="text-[#6e7681] hover:text-[#f85149] ml-2 flex-shrink-0"
+                    className="text-text-tertiary hover:text-error ml-2 flex-shrink-0"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -579,12 +579,12 @@ function DepsTab({ task, snapshot }: { task: Task; snapshot: BoardSnapshot }) {
       </div>
 
       <div>
-        <p className="text-xs font-medium uppercase tracking-wider text-[#8b949e] mb-2">Add dependency</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-text-secondary mb-2">Add dependency</p>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search tasks…"
-          className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff] mb-2"
+          className="w-full bg-canvas border border-border px-3 py-2 text-sm text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent mb-2"
         />
         {search && matchingTasks.length > 0 && (
           <div className="space-y-1 max-h-40 overflow-y-auto">
@@ -592,9 +592,9 @@ function DepsTab({ task, snapshot }: { task: Task; snapshot: BoardSnapshot }) {
               <button
                 key={t.id}
                 onClick={() => handleAddDep(t.id)}
-                className="w-full text-left flex items-center gap-2 bg-[#0d1117] border border-[#30363d] hover:border-[#58a6ff] px-3 py-2 text-sm text-[#e6edf3] transition-colors"
+                className="w-full text-left flex items-center gap-2 bg-canvas border border-border hover:border-accent px-3 py-2 text-sm text-text-primary transition-colors"
               >
-                <ChevronRight className="h-3.5 w-3.5 text-[#6e7681] flex-shrink-0" />
+                <ChevronRight className="h-3.5 w-3.5 text-text-tertiary flex-shrink-0" />
                 <span className="truncate">{t.title}</span>
               </button>
             ))}
@@ -626,35 +626,35 @@ function ActivityTab({ task }: { task: Task }) {
 
   return (
     <div className="flex flex-col h-full gap-4">
-      {isLoading && <p className="text-xs text-[#6e7681]">loading…</p>}
+      {isLoading && <p className="text-xs text-text-tertiary">loading…</p>}
       {!isLoading && (events ?? []).length === 0 && (
-        <p className="text-xs font-mono text-[#6e7681]">No comments yet</p>
+        <p className="text-xs font-mono text-text-tertiary">No comments yet</p>
       )}
       <div className="space-y-3 flex-1">
         {(events ?? []).map((ev) => (
           <div key={ev.id} className="flex gap-2">
-            <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#58a6ff] mt-1.5" />
+            <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-accent mt-1.5" />
             <div>
               <div className="flex items-center gap-2 mb-0.5">
-                {ev.agentId && <span className="text-[10px] font-mono text-[#6e7681]">{ev.agentId}</span>}
-                <span className="text-[10px] font-mono text-[#6e7681]">{relativeTime(ev.createdAt)}</span>
+                {ev.agentId && <span className="text-[10px] font-mono text-text-tertiary">{ev.agentId}</span>}
+                <span className="text-[10px] font-mono text-text-tertiary">{relativeTime(ev.createdAt)}</span>
               </div>
-              <p className="text-sm text-[#e6edf3]">{ev.message}</p>
+              <p className="text-sm text-text-primary">{ev.message}</p>
             </div>
           </div>
         ))}
       </div>
-      <form onSubmit={submitComment} className="flex gap-2 pt-2 border-t border-[#30363d]">
+      <form onSubmit={submitComment} className="flex gap-2 pt-2 border-t border-border">
         <input
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           placeholder="Add comment…"
-          className="flex-1 bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff]"
+          className="flex-1 bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent"
         />
         <button
           type="submit"
           disabled={!comment.trim() || createActivity.isPending}
-          className="px-3 py-2 text-xs font-mono text-white bg-[#1f6feb] border border-[#388bfd] hover:bg-[#388bfd] disabled:opacity-50 transition-colors"
+          className="px-3 py-2 text-xs font-mono text-white bg-accent border border-accent hover:bg-accent disabled:opacity-50 transition-colors"
         >
           Send
         </button>
@@ -679,36 +679,36 @@ function NotesTab({ task }: { task: Task }) {
 
   return (
     <div className="flex flex-col h-full gap-4">
-      {isLoading && <p className="text-xs text-[#6e7681]">loading…</p>}
+      {isLoading && <p className="text-xs text-text-tertiary">loading…</p>}
       {!isLoading && (notes ?? []).length === 0 && (
-        <p className="text-xs font-mono text-[#6e7681]">No notes yet</p>
+        <p className="text-xs font-mono text-text-tertiary">No notes yet</p>
       )}
       <div className="space-y-3 flex-1">
         {(notes ?? []).map((note) => (
           <div key={note.id} className="flex gap-2">
-            <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#d29922] mt-1.5" />
+            <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-warning mt-1.5" />
             <div>
               <div className="flex items-center gap-2 mb-0.5">
-                {note.agentId && <span className="text-[10px] font-mono text-[#6e7681]">{note.agentId}</span>}
-                <span className="text-[10px] font-mono text-[#6e7681]">{relativeTime(note.createdAt)}</span>
+                {note.agentId && <span className="text-[10px] font-mono text-text-tertiary">{note.agentId}</span>}
+                <span className="text-[10px] font-mono text-text-tertiary">{relativeTime(note.createdAt)}</span>
               </div>
-              <p className="text-sm text-[#e6edf3]">{note.message}</p>
+              <p className="text-sm text-text-primary">{note.message}</p>
             </div>
           </div>
         ))}
       </div>
-      <form onSubmit={submitNote} className="flex gap-2 pt-2 border-t border-[#30363d]">
+      <form onSubmit={submitNote} className="flex gap-2 pt-2 border-t border-border">
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Add note…"
           rows={2}
-          className="flex-1 bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff] resize-none"
+          className="flex-1 bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent resize-none"
         />
         <button
           type="submit"
           disabled={!message.trim() || createNote.isPending}
-          className="px-3 py-2 text-xs font-mono text-white bg-[#1f6feb] border border-[#388bfd] hover:bg-[#388bfd] disabled:opacity-50 transition-colors self-end"
+          className="px-3 py-2 text-xs font-mono text-white bg-accent border border-accent hover:bg-accent disabled:opacity-50 transition-colors self-end"
         >
           Save
         </button>
@@ -731,10 +731,10 @@ function TagsTab({ task }: { task: Task }) {
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-xs font-mono uppercase tracking-wider text-[#8b949e] mb-2">Applied tags</p>
-        {loadingTaskTags && <p className="text-xs text-[#6e7681]">loading…</p>}
+        <p className="text-xs font-mono uppercase tracking-wider text-text-secondary mb-2">Applied tags</p>
+        {loadingTaskTags && <p className="text-xs text-text-tertiary">loading…</p>}
         {!loadingTaskTags && (taskTags ?? []).length === 0 && (
-          <p className="text-xs font-mono text-[#6e7681]">No tags applied</p>
+          <p className="text-xs font-mono text-text-tertiary">No tags applied</p>
         )}
         <div className="flex flex-wrap gap-2">
           {(taskTags ?? []).map((tag) => {
@@ -760,7 +760,7 @@ function TagsTab({ task }: { task: Task }) {
 
       {availableTags.length > 0 && (
         <div>
-          <p className="text-xs font-mono uppercase tracking-wider text-[#8b949e] mb-2">Add tag</p>
+          <p className="text-xs font-mono uppercase tracking-wider text-text-secondary mb-2">Add tag</p>
           <div className="flex flex-wrap gap-1.5">
             {availableTags.map((tag) => {
               const hex = tag.color.startsWith('#') ? tag.color : `#${tag.color}`
@@ -800,15 +800,15 @@ function TaskDetailSheet({
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-[#161b22] border-l border-[#30363d] w-[420px] h-full flex flex-col shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#30363d]">
-          <h3 className="text-sm font-semibold text-[#e6edf3] truncate pr-4">{task.title}</h3>
-          <button onClick={onClose} className="text-[#6e7681] hover:text-[#e6edf3] transition-colors flex-shrink-0">
+      <div className="relative bg-surface border-l border-border w-[420px] h-full flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <h3 className="text-sm font-semibold text-text-primary truncate pr-4">{task.title}</h3>
+          <button onClick={onClose} className="text-text-tertiary hover:text-text-primary transition-colors flex-shrink-0">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        <div className="flex border-b border-[#30363d]">
+        <div className="flex border-b border-border">
           {(['detail', 'deps', 'activity', 'tags', 'notes'] as const).map((t) => (
             <button
               key={t}
@@ -816,8 +816,8 @@ function TaskDetailSheet({
               className={cn(
                 'flex-1 px-2 py-2.5 text-[10px] font-mono font-medium uppercase tracking-wider transition-colors',
                 tab === t
-                  ? 'text-[#58a6ff] border-b-2 border-[#58a6ff]'
-                  : 'text-[#6e7681] hover:text-[#8b949e]',
+                  ? 'text-accent border-b-2 border-accent'
+                  : 'text-text-tertiary hover:text-text-secondary',
               )}
             >
               {t}
@@ -870,56 +870,56 @@ function BoardChatPanel({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-[#161b22] border-l border-[#30363d] w-[380px] h-full flex flex-col shadow-xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#30363d]">
+      <div className="relative bg-surface border-l border-border w-[380px] h-full flex flex-col shadow-xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
-            <h3 className="font-mono text-[12px] font-semibold text-[#e6edf3] uppercase tracking-wide">
-              <span className="text-[#58a6ff]">~/boards/</span>{boardName}
+            <h3 className="font-mono text-[12px] font-semibold text-text-primary uppercase tracking-wide">
+              <span className="text-accent">~/boards/</span>{boardName}
             </h3>
-            <p className="font-mono text-[10px] text-[#6e7681] mt-0.5">board chat</p>
+            <p className="font-mono text-[10px] text-text-tertiary mt-0.5">board chat</p>
           </div>
-          <button onClick={onClose} className="text-[#6e7681] hover:text-[#e6edf3] transition-colors flex-shrink-0">
+          <button onClick={onClose} className="text-text-tertiary hover:text-text-primary transition-colors flex-shrink-0">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {!gatewayAgentId ? (
           <div className="flex-1 flex items-center justify-center p-6">
-            <p className="font-mono text-xs text-[#6e7681] text-center">
+            <p className="font-mono text-xs text-text-tertiary text-center">
               No gateway agent configured for this board
             </p>
           </div>
         ) : (
           <>
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {isLoading && <p className="text-xs font-mono text-[#6e7681]">loading…</p>}
+              {isLoading && <p className="text-xs font-mono text-text-tertiary">loading…</p>}
               {!isLoading && (events ?? []).length === 0 && (
-                <p className="text-xs font-mono text-[#6e7681]">No messages yet</p>
+                <p className="text-xs font-mono text-text-tertiary">No messages yet</p>
               )}
               {(events ?? []).map((ev) => (
                 <div key={ev.id} className="flex gap-2">
-                  <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#3fb950] mt-1.5" />
+                  <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-success mt-1.5" />
                   <div>
                     <div className="flex items-center gap-2 mb-0.5">
-                      {ev.agentId && <span className="text-[10px] font-mono text-[#6e7681]">{ev.agentId}</span>}
-                      <span className="text-[10px] font-mono text-[#6e7681]">{relativeTime(ev.createdAt)}</span>
+                      {ev.agentId && <span className="text-[10px] font-mono text-text-tertiary">{ev.agentId}</span>}
+                      <span className="text-[10px] font-mono text-text-tertiary">{relativeTime(ev.createdAt)}</span>
                     </div>
-                    <p className="text-sm text-[#e6edf3]">{ev.message}</p>
+                    <p className="text-sm text-text-primary">{ev.message}</p>
                   </div>
                 </div>
               ))}
             </div>
-            <form onSubmit={handleSend} className="flex gap-2 p-4 border-t border-[#30363d]">
+            <form onSubmit={handleSend} className="flex gap-2 p-4 border-t border-border">
               <input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Message board…"
-                className="flex-1 bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff]"
+                className="flex-1 bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent"
               />
               <button
                 type="submit"
                 disabled={!message.trim() || sending}
-                className="px-3 py-2 text-xs font-mono text-white bg-[#1f6feb] border border-[#388bfd] hover:bg-[#388bfd] disabled:opacity-50 transition-colors"
+                className="px-3 py-2 text-xs font-mono text-white bg-accent border border-accent hover:bg-accent disabled:opacity-50 transition-colors"
               >
                 Send
               </button>
@@ -970,26 +970,26 @@ function RubricScoreEditor({
   }
 
   return (
-    <div className="border border-[#30363d] bg-[#0d1117]">
+    <div className="border border-border bg-canvas">
       <button
         onClick={() => setExpanded((v) => !v)}
-        className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-mono text-[#6e7681] hover:text-[#8b949e] transition-colors"
+        className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-mono text-text-tertiary hover:text-text-secondary transition-colors"
       >
         <span className="uppercase tracking-wider">rubric scores</span>
         <ChevronRight className={cn('h-3 w-3 transition-transform', expanded && 'rotate-90')} />
       </button>
       {expanded && (
-        <div className="px-3 pb-3 space-y-2 border-t border-[#21262d] pt-2">
+        <div className="px-3 pb-3 space-y-2 border-t border-border-subtle pt-2">
           {Object.keys(scores).length === 0 && (
-            <p className="text-[10px] font-mono text-[#484f58]">no scores defined</p>
+            <p className="text-[10px] font-mono text-text-tertiary">no scores defined</p>
           )}
           {Object.entries(scores).map(([key, val]) => (
             <div key={key} className="flex items-center gap-2">
-              <span className="font-mono text-[10px] text-[#8b949e] w-24 truncate flex-shrink-0">{key}</span>
+              <span className="font-mono text-[10px] text-text-secondary w-24 truncate flex-shrink-0">{key}</span>
               <input
                 value={val}
                 onChange={(e) => setScores((prev) => ({ ...prev, [key]: e.target.value }))}
-                className="flex-1 bg-[#161b22] border border-[#30363d] px-2 py-1 font-mono text-[11px] text-[#e6edf3] focus:outline-none focus:border-[#58a6ff] transition-colors"
+                className="flex-1 bg-surface border border-border px-2 py-1 font-mono text-[11px] text-text-primary focus:outline-none focus:border-accent transition-colors"
                 placeholder="value"
               />
               <button
@@ -1000,7 +1000,7 @@ function RubricScoreEditor({
                     return n
                   })
                 }
-                className="text-[#6e7681] hover:text-[#f85149] transition-colors flex-shrink-0"
+                className="text-text-tertiary hover:text-error transition-colors flex-shrink-0"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -1014,11 +1014,11 @@ function RubricScoreEditor({
                 if (e.key === 'Enter') addKey()
               }}
               placeholder="new key…"
-              className="flex-1 bg-[#161b22] border border-[#30363d] px-2 py-1 font-mono text-[11px] text-[#e6edf3] placeholder-[#484f58] focus:outline-none focus:border-[#58a6ff] transition-colors"
+              className="flex-1 bg-surface border border-border px-2 py-1 font-mono text-[11px] text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent transition-colors"
             />
             <button
               onClick={addKey}
-              className="px-2 py-1 font-mono text-[11px] text-[#58a6ff] border border-[#30363d] hover:border-[#58a6ff] transition-colors"
+              className="px-2 py-1 font-mono text-[11px] text-accent border border-border hover:border-accent transition-colors"
             >
               +
             </button>
@@ -1026,7 +1026,7 @@ function RubricScoreEditor({
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-1.5 font-mono text-[11px] text-[#0d1117] bg-[#58a6ff] hover:bg-[#79b8ff] transition-colors disabled:opacity-50"
+            className="w-full py-1.5 font-mono text-[11px] text-canvas bg-accent hover:bg-accent-hover transition-colors disabled:opacity-50"
           >
             {saving ? 'saving…' : 'save scores'}
           </button>
@@ -1063,39 +1063,39 @@ function ApprovalsPanel({ boardId, tasks, onClose }: { boardId: string; tasks: T
 
   const confidenceClass = (conf?: string | null) => {
     const n = parseFloat(conf ?? '0')
-    if (n >= 0.8) return 'text-[#3fb950] border-[#3fb950]/30 bg-[#3fb950]/10'
-    if (n >= 0.5) return 'text-[#d29922] border-[#d29922]/30 bg-[#d29922]/10'
-    return 'text-[#f85149] border-[#f85149]/30 bg-[#f85149]/10'
+    if (n >= 0.8) return 'text-success border-success/30 bg-success/10'
+    if (n >= 0.5) return 'text-warning border-warning/30 bg-warning/10'
+    return 'text-error border-error/30 bg-error/10'
   }
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-[#161b22] border-l border-[#30363d] w-[420px] h-full flex flex-col shadow-xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#30363d]">
+      <div className="relative bg-surface border-l border-border w-[420px] h-full flex flex-col shadow-xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
-            <h3 className="font-mono text-[12px] font-semibold text-[#e6edf3] uppercase tracking-wide flex items-center gap-2">
-              <ShieldCheck className="h-3.5 w-3.5 text-[#d29922]" />
+            <h3 className="font-mono text-[12px] font-semibold text-text-primary uppercase tracking-wide flex items-center gap-2">
+              <ShieldCheck className="h-3.5 w-3.5 text-warning" />
               Approvals
             </h3>
-            <p className="font-mono text-[10px] text-[#6e7681] mt-0.5">
+            <p className="font-mono text-[10px] text-text-tertiary mt-0.5">
               {pending.length} pending · {resolved.length} resolved
             </p>
           </div>
-          <button onClick={onClose} className="text-[#6e7681] hover:text-[#e6edf3] transition-colors">
+          <button onClick={onClose} className="text-text-tertiary hover:text-text-primary transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[#30363d]">
+        <div className="flex border-b border-border">
           {(['pending', 'resolved'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={cn(
                 'flex-1 px-2 py-2.5 text-[10px] font-mono font-medium uppercase tracking-wider transition-colors',
-                tab === t ? 'text-[#58a6ff] border-b-2 border-[#58a6ff]' : 'text-[#6e7681] hover:text-[#8b949e]',
+                tab === t ? 'text-accent border-b-2 border-accent' : 'text-text-tertiary hover:text-text-secondary',
               )}
             >
               {t}
@@ -1105,20 +1105,20 @@ function ApprovalsPanel({ boardId, tasks, onClose }: { boardId: string; tasks: T
 
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
-            <p className="p-5 text-xs font-mono text-[#6e7681]">loading…</p>
+            <p className="p-5 text-xs font-mono text-text-tertiary">loading…</p>
           ) : shown.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 p-8 text-center">
-              <CheckCircle2 className="h-8 w-8 text-[#3fb950] opacity-60" />
-              <p className="text-xs font-mono text-[#6e7681]">
+              <CheckCircle2 className="h-8 w-8 text-success opacity-60" />
+              <p className="text-xs font-mono text-text-tertiary">
                 {tab === 'pending' ? 'No pending approvals' : 'No resolved approvals'}
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-[#21262d]">
+            <div className="divide-y divide-border-subtle">
               {shown.map((a: ApprovalFull) => (
                 <div key={a.id} className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-2">
-                    <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[#58a6ff] bg-[#58a6ff]/10 border border-[#58a6ff]/20 px-2 py-0.5">
+                    <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-accent bg-accent/10 border border-accent/20 px-2 py-0.5">
                       {a.actionType}
                     </span>
                     <span className={cn('font-mono text-[10px] font-semibold border px-2 py-0.5', confidenceClass(a.confidence))}>
@@ -1126,10 +1126,10 @@ function ApprovalsPanel({ boardId, tasks, onClose }: { boardId: string; tasks: T
                     </span>
                   </div>
                   <div>
-                    <p className="text-xs font-mono text-[#6e7681]">agent · {a.agentId}</p>
+                    <p className="text-xs font-mono text-text-tertiary">agent · {a.agentId}</p>
                     {a.taskId && (
-                      <p className="text-[11px] font-mono text-[#e6edf3] mt-1 flex items-center gap-1">
-                        <ChevronRight className="h-3 w-3 text-[#6e7681]" />
+                      <p className="text-[11px] font-mono text-text-primary mt-1 flex items-center gap-1">
+                        <ChevronRight className="h-3 w-3 text-text-tertiary" />
                         {tasks.find((t) => t.id === a.taskId)?.title ?? (a.taskId.slice(0, 8) + '…')}
                       </p>
                     )}
@@ -1140,28 +1140,28 @@ function ApprovalsPanel({ boardId, tasks, onClose }: { boardId: string; tasks: T
                       <button
                         onClick={() => decide(a.id, 'approved')}
                         disabled={updatingId === a.id}
-                        className="flex-1 py-1.5 text-xs font-mono font-semibold text-white bg-[#238636] border border-[#2ea043] hover:bg-[#2ea043] disabled:opacity-50 transition-colors"
+                        className="flex-1 py-1.5 text-xs font-mono font-semibold text-white bg-accent border border-accent hover:bg-accent-hover disabled:opacity-50 transition-colors"
                       >
                         Approve
                       </button>
                       <button
                         onClick={() => decide(a.id, 'rejected')}
                         disabled={updatingId === a.id}
-                        className="flex-1 py-1.5 text-xs font-mono font-semibold text-[#f85149] border border-[#f85149]/40 hover:bg-[#f85149]/10 disabled:opacity-50 transition-colors"
+                        className="flex-1 py-1.5 text-xs font-mono font-semibold text-error border border-error/40 hover:bg-error/10 disabled:opacity-50 transition-colors"
                       >
                         Reject
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 text-[10px] font-mono text-[#6e7681]">
+                    <div className="flex items-center gap-2 text-[10px] font-mono text-text-tertiary">
                       <Clock className="h-3 w-3" />
                       <span>{a.updatedAt ? relativeTime(a.updatedAt) : '—'}</span>
                       <span
                         className={cn(
                           'ml-auto px-2 py-0.5 border font-semibold uppercase tracking-wider',
                           a.status === 'approved'
-                            ? 'text-[#3fb950] border-[#3fb950]/30 bg-[#3fb950]/10'
-                            : 'text-[#f85149] border-[#f85149]/30 bg-[#f85149]/10',
+                            ? 'text-success border-success/30 bg-success/10'
+                            : 'text-error border-error/30 bg-error/10',
                         )}
                       >
                         {a.status}
@@ -1246,15 +1246,15 @@ function BoardSettingsPanel({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative bg-[#161b22] border-l border-[#30363d] w-[420px] h-full flex flex-col shadow-xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#30363d]">
+      <div className="relative bg-surface border-l border-border w-[420px] h-full flex flex-col shadow-xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div>
-            <h3 className="font-mono text-[12px] font-semibold text-[#e6edf3] uppercase tracking-wide flex items-center gap-2">
-              <Settings className="h-3.5 w-3.5 text-[#6e7681]" />
+            <h3 className="font-mono text-[12px] font-semibold text-text-primary uppercase tracking-wide flex items-center gap-2">
+              <Settings className="h-3.5 w-3.5 text-text-tertiary" />
               Board settings
             </h3>
           </div>
-          <button onClick={onClose} className="text-[#6e7681] hover:text-[#e6edf3] transition-colors">
+          <button onClick={onClose} className="text-text-tertiary hover:text-text-primary transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -1262,47 +1262,47 @@ function BoardSettingsPanel({
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           {/* Identity */}
           <section className="space-y-3">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[#6e7681]">Identity</p>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">Identity</p>
             <div className="space-y-2">
-              <label className="font-mono text-[11px] text-[#8b949e]">Name</label>
+              <label className="font-mono text-[11px] text-text-secondary">Name</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff]"
+                className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent"
               />
             </div>
             <div className="space-y-2">
-              <label className="font-mono text-[11px] text-[#8b949e]">Description</label>
+              <label className="font-mono text-[11px] text-text-secondary">Description</label>
               <input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff]"
+                className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent"
               />
             </div>
             <div className="space-y-2">
-              <label className="font-mono text-[11px] text-[#8b949e]">Objective</label>
+              <label className="font-mono text-[11px] text-text-secondary">Objective</label>
               <textarea
                 value={objective}
                 onChange={(e) => setObjective(e.target.value)}
                 rows={3}
-                className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff] resize-none"
+                className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent resize-none"
               />
             </div>
             <div className="space-y-2">
-              <label className="font-mono text-[11px] text-[#8b949e]">Target date</label>
+              <label className="font-mono text-[11px] text-text-secondary">Target date</label>
               <input
                 type="date"
                 value={targetDate}
                 onChange={(e) => setTargetDate(e.target.value)}
-                className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] focus:outline-none focus:border-[#58a6ff]"
+                className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary focus:outline-none focus:border-accent"
               />
             </div>
             <div className="space-y-2">
-              <label className="font-mono text-[11px] text-[#8b949e]">Gateway agent</label>
+              <label className="font-mono text-[11px] text-text-secondary">Gateway agent</label>
               <select
                 value={gatewayAgentId}
                 onChange={(e) => setGatewayAgentId(e.target.value)}
-                className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] focus:outline-none focus:border-[#58a6ff]"
+                className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary focus:outline-none focus:border-accent"
               >
                 <option value="">None</option>
                 {(agents ?? []).map((a) => (
@@ -1314,10 +1314,10 @@ function BoardSettingsPanel({
 
           {/* Governance */}
           <section className="space-y-3">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[#6e7681]">Governance</p>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">Governance</p>
             {toggles.map(({ label, value, set }) => (
               <label key={label} className="flex items-center justify-between gap-3 cursor-pointer">
-                <span className="font-mono text-[11px] text-[#8b949e]">{label}</span>
+                <span className="font-mono text-[11px] text-text-secondary">{label}</span>
                 <button
                   type="button"
                   role="switch"
@@ -1325,7 +1325,7 @@ function BoardSettingsPanel({
                   onClick={() => set(!value)}
                   className={cn(
                     'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 transition-colors focus:outline-none',
-                    value ? 'bg-[#1f6feb] border-[#388bfd]' : 'bg-[#21262d] border-[#30363d]',
+                    value ? 'bg-accent border-accent' : 'bg-surface-hover border-border',
                   )}
                 >
                   <span className={cn(
@@ -1339,30 +1339,30 @@ function BoardSettingsPanel({
 
           {/* Capacity */}
           <section className="space-y-3">
-            <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-[#6e7681]">Capacity</p>
+            <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-text-tertiary">Capacity</p>
             <div className="space-y-2">
-              <label className="font-mono text-[11px] text-[#8b949e]">Max agents (1–100)</label>
+              <label className="font-mono text-[11px] text-text-secondary">Max agents (1–100)</label>
               <input
                 type="number"
                 min={1}
                 max={100}
                 value={maxAgents}
                 onChange={(e) => setMaxAgents(Math.min(100, Math.max(1, parseInt(e.target.value, 10) || 1)))}
-                className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] focus:outline-none focus:border-[#58a6ff]"
+                className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary focus:outline-none focus:border-accent"
               />
             </div>
           </section>
 
           {error && (
-            <p className="font-mono text-xs text-[#f85149] border border-[#f85149]/30 bg-[#f85149]/10 px-3 py-2">{error}</p>
+            <p className="font-mono text-xs text-error border border-error/30 bg-error/10 px-3 py-2">{error}</p>
           )}
         </div>
 
-        <div className="p-5 border-t border-[#30363d]">
+        <div className="p-5 border-t border-border">
           <button
             onClick={handleSave}
             disabled={saving || !name.trim()}
-            className="w-full py-2 text-xs font-mono font-semibold text-white bg-[#1f6feb] border border-[#388bfd] hover:bg-[#388bfd] disabled:opacity-50 transition-colors"
+            className="w-full py-2 text-xs font-mono font-semibold text-white bg-accent border border-accent hover:bg-accent disabled:opacity-50 transition-colors"
           >
             {saving ? 'Saving…' : 'Save settings'}
           </button>
@@ -1464,13 +1464,13 @@ function BoardDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-[#8b949e]">Loading board…</div>
+      <div className="flex items-center justify-center h-64 text-text-secondary">Loading board…</div>
     )
   }
 
   if (isError || !snapshot) {
     return (
-      <div className="flex items-center justify-center h-64 text-[#f85149]">Failed to load board.</div>
+      <div className="flex items-center justify-center h-64 text-error">Failed to load board.</div>
     )
   }
 
@@ -1482,12 +1482,12 @@ function BoardDetailPage() {
   return (
     <div className="flex flex-col h-full gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#21262d] pb-3 mb-2">
+      <div className="flex items-center justify-between border-b border-border-subtle pb-3 mb-2">
         <div className="flex-1 min-w-0 mr-4">
-          <h1 className="font-mono text-[13px] font-semibold text-[#e6edf3] tracking-wide uppercase">
-            <span className="text-[#58a6ff]">~/boards/</span>{board.name}
+          <h1 className="font-mono text-[13px] font-semibold text-text-primary tracking-wide uppercase">
+            <span className="text-accent">~/boards/</span>{board.name}
           </h1>
-          {board.description && <p className="font-mono text-[11px] text-[#6e7681] mt-0.5">{board.description}</p>}
+          {board.description && <p className="font-mono text-[11px] text-text-tertiary mt-0.5">{board.description}</p>}
           {/* Board health bar */}
           {(() => {
             const total = snapshot.tasks.length
@@ -1498,20 +1498,20 @@ function BoardDetailPage() {
             const barColor = pct > 70 ? '#3fb950' : pct > 30 ? '#d29922' : '#f85149'
             return (
               <div className="mt-2 flex flex-col gap-1">
-                <div className="h-1 bg-[#21262d] w-full">
+                <div className="h-1 bg-surface-hover w-full">
                   <div className="h-full transition-all" style={{ width: `${pct}%`, backgroundColor: barColor }} />
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-[10px] text-[#6e7681]">{done} done</span>
-                  <span className="font-mono text-[10px] text-[#6e7681]">·</span>
-                  <span className="font-mono text-[10px] text-[#6e7681]">{inProg} in progress</span>
+                  <span className="font-mono text-[10px] text-text-tertiary">{done} done</span>
+                  <span className="font-mono text-[10px] text-text-tertiary">·</span>
+                  <span className="font-mono text-[10px] text-text-tertiary">{inProg} in progress</span>
                   {blocked > 0 && (
                     <>
-                      <span className="font-mono text-[10px] text-[#6e7681]">·</span>
-                      <span className="font-mono text-[10px] text-[#d29922]">{blocked} blocked</span>
+                      <span className="font-mono text-[10px] text-text-tertiary">·</span>
+                      <span className="font-mono text-[10px] text-warning">{blocked} blocked</span>
                     </>
                   )}
-                  <span className="font-mono text-[10px] text-[#6e7681] ml-auto">{pct}%</span>
+                  <span className="font-mono text-[10px] text-text-tertiary ml-auto">{pct}%</span>
                 </div>
               </div>
             )
@@ -1520,7 +1520,7 @@ function BoardDetailPage() {
         <div className="flex items-center gap-2">
           {/* Goal Confirmed toggle */}
           <label className="flex items-center gap-1.5 cursor-pointer select-none">
-            <span className="font-mono text-[10px] text-[#6e7681] uppercase tracking-wider">goal confirmed</span>
+            <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-wider">goal confirmed</span>
             <button
               type="button"
               role="switch"
@@ -1529,7 +1529,7 @@ function BoardDetailPage() {
               onClick={() => updateBoard.mutate({ goalConfirmed: !(board.goalConfirmed ?? false) })}
               className={cn(
                 'relative inline-flex h-4 w-7 flex-shrink-0 rounded-full border-2 transition-colors focus:outline-none disabled:opacity-50',
-                board.goalConfirmed ? 'bg-[#3fb950] border-[#3fb950]' : 'bg-[#21262d] border-[#30363d]',
+                board.goalConfirmed ? 'bg-success border-success' : 'bg-surface-hover border-border',
               )}
             >
               <span
@@ -1542,13 +1542,13 @@ function BoardDetailPage() {
           </label>
           <button
             onClick={() => setBoardSettingsOpen(true)}
-            className="px-3 py-1.5 font-mono text-[11px] text-[#6e7681] border border-[#30363d] hover:border-[#6e7681] transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 font-mono text-[11px] text-text-tertiary border border-border hover:border-text-tertiary transition-colors flex items-center gap-1.5"
           >
             <Settings className="h-3 w-3" />
           </button>
           <button
             onClick={() => setBoardChatOpen(true)}
-            className="px-3 py-1.5 font-mono text-[11px] text-[#58a6ff] border border-[#30363d] hover:border-[#58a6ff] transition-colors flex items-center gap-1.5"
+            className="px-3 py-1.5 font-mono text-[11px] text-accent border border-border hover:border-accent transition-colors flex items-center gap-1.5"
           >
             <MessageSquare className="h-3 w-3" />
             Chat
@@ -1558,14 +1558,14 @@ function BoardDetailPage() {
 
       {/* Approval banner */}
       {pendingApprovals.length > 0 && (
-        <div className="flex items-center gap-3 bg-[#271700] border border-[#9e6a03] px-4 py-3">
-          <AlertTriangle className="h-4 w-4 text-[#d29922] flex-shrink-0" />
-          <span className="text-sm text-[#d29922] flex-1">
+        <div className="flex items-center gap-3 bg-warning-subtle border border-warning px-4 py-3">
+          <AlertTriangle className="h-4 w-4 text-warning flex-shrink-0" />
+          <span className="text-sm text-warning flex-1">
             {pendingApprovals.length} approval{pendingApprovals.length !== 1 ? 's' : ''} pending review
           </span>
           <button
             onClick={() => setApprovalsOpen(true)}
-            className="text-xs font-medium text-[#d29922] hover:text-[#e3b341] border border-[#9e6a03] px-3 py-1 transition-colors"
+            className="text-xs font-medium text-warning hover:text-warning border border-warning px-3 py-1 transition-colors"
           >
             Review
           </button>
@@ -1574,12 +1574,12 @@ function BoardDetailPage() {
 
       {/* Drag error banner */}
       {dragError && (
-        <div className="flex items-center gap-3 bg-[#1a0a0a] border border-[#f85149]/50 px-4 py-3">
-          <AlertTriangle className="h-4 w-4 text-[#f85149] flex-shrink-0" />
-          <span className="text-sm text-[#f85149] flex-1">{dragError}</span>
+        <div className="flex items-center gap-3 bg-error-subtle border border-error/50 px-4 py-3">
+          <AlertTriangle className="h-4 w-4 text-error flex-shrink-0" />
+          <span className="text-sm text-error flex-1">{dragError}</span>
           <button
             onClick={() => setDragError(null)}
-            className="text-[#f85149] hover:text-[#ff7b72] transition-colors flex-shrink-0"
+            className="text-error hover:text-error transition-colors flex-shrink-0"
           >
             <X className="h-4 w-4" />
           </button>
@@ -1593,12 +1593,12 @@ function BoardDetailPage() {
           placeholder="search tasks..."
           value={filterText}
           onChange={(e) => setFilterText(e.target.value)}
-          className="bg-[#0d1117] border border-[#30363d] px-2.5 py-1.5 text-xs font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff] w-48"
+          className="bg-canvas border border-border px-2.5 py-1.5 text-xs font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent w-48"
         />
         <select
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
-          className="bg-[#161b22] border border-[#30363d] px-2 py-1.5 text-xs font-mono text-[#8b949e] focus:outline-none focus:border-[#58a6ff]"
+          className="bg-surface border border-border px-2 py-1.5 text-xs font-mono text-text-secondary focus:outline-none focus:border-accent"
         >
           <option value="all">all priority</option>
           <option value="high">high</option>
@@ -1609,7 +1609,7 @@ function BoardDetailPage() {
           <select
             value={filterAgentId}
             onChange={(e) => setFilterAgentId(e.target.value)}
-            className="bg-[#161b22] border border-[#30363d] px-2 py-1.5 text-xs font-mono text-[#8b949e] focus:outline-none focus:border-[#58a6ff]"
+            className="bg-surface border border-border px-2 py-1.5 text-xs font-mono text-text-secondary focus:outline-none focus:border-accent"
           >
             <option value="all">all agents</option>
             {(agents ?? []).map((a) => (
@@ -1621,7 +1621,7 @@ function BoardDetailPage() {
           <select
             value={filterTagId}
             onChange={(e) => setFilterTagId(e.target.value)}
-            className="bg-[#161b22] border border-[#30363d] px-2 py-1.5 text-xs font-mono text-[#8b949e] focus:outline-none focus:border-[#58a6ff]"
+            className="bg-surface border border-border px-2 py-1.5 text-xs font-mono text-text-secondary focus:outline-none focus:border-accent"
           >
             <option value="all">all tags</option>
             {boardTags.map((tag) => (
@@ -1633,8 +1633,8 @@ function BoardDetailPage() {
           onClick={() => setFilterBlocked((v) => !v)}
           className={`px-2.5 py-1.5 font-mono text-[11px] uppercase border transition-colors ${
             filterBlocked
-              ? 'text-[#d29922] border-[#d29922]/50 bg-[#d29922]/10'
-              : 'text-[#6e7681] border-[#30363d] hover:text-[#8b949e]'
+              ? 'text-warning border-warning/50 bg-warning/10'
+              : 'text-text-tertiary border-border hover:text-text-secondary'
           }`}
         >
           blocked only
@@ -1642,7 +1642,7 @@ function BoardDetailPage() {
         {(filterText || filterPriority !== 'all' || filterAgentId !== 'all' || filterTagId !== 'all' || filterBlocked) && (
           <button
             onClick={() => { setFilterText(''); setFilterPriority('all'); setFilterAgentId('all'); setFilterTagId('all'); setFilterBlocked(false) }}
-            className="px-2.5 py-1.5 font-mono text-[11px] text-[#6e7681] border border-[#30363d] hover:text-[#8b949e] transition-colors"
+            className="px-2.5 py-1.5 font-mono text-[11px] text-text-tertiary border border-border hover:text-text-secondary transition-colors"
           >
             clear
           </button>

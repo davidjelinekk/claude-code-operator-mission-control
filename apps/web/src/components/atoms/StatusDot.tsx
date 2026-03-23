@@ -6,10 +6,10 @@ interface StatusDotProps {
 }
 
 const statusColors: Record<StatusDotProps['status'], string> = {
-  online: 'bg-[#3fb950]',
-  offline: 'bg-[#6e7681]',
-  busy: 'bg-[#f85149]',
-  idle: 'bg-[#d29922]',
+  online: 'bg-success',
+  offline: 'bg-text-tertiary',
+  busy: 'bg-error',
+  idle: 'bg-warning',
 }
 
 export function StatusDot({ status, className }: StatusDotProps) {

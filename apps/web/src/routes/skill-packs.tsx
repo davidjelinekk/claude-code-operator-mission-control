@@ -14,10 +14,10 @@ export const Route = createFileRoute('/skill-packs')({
 })
 
 const STATUS_STYLE: Record<string, string> = {
-  installed: 'text-[#3fb950] border-[#3fb950]/30 bg-[#3fb950]/10',
-  installing: 'text-[#d29922] border-[#d29922]/30 bg-[#d29922]/10',
-  not_installed: 'text-[#6e7681] border-[#30363d]',
-  error: 'text-[#f85149] border-[#f85149]/30 bg-[#f85149]/10',
+  installed: 'text-success border-success/30 bg-success/10',
+  installing: 'text-warning border-warning/30 bg-warning/10',
+  not_installed: 'text-text-tertiary border-border',
+  error: 'text-error border-error/30 bg-error/10',
 }
 
 function SkillPackCard({ pack }: { pack: SkillPack }) {
@@ -28,19 +28,19 @@ function SkillPackCard({ pack }: { pack: SkillPack }) {
   const status = pack.installStatus ?? 'not_installed'
 
   return (
-    <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-3">
+    <div className="border border-border bg-surface p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-mono text-sm font-semibold text-[#e6edf3] truncate">{pack.name}</span>
+            <span className="font-mono text-sm font-semibold text-text-primary truncate">{pack.name}</span>
             {pack.version && (
-              <span className="font-mono text-[10px] text-[#6e7681] border border-[#30363d] px-1.5 py-0.5 flex-shrink-0">
+              <span className="font-mono text-[10px] text-text-tertiary border border-border px-1.5 py-0.5 flex-shrink-0">
                 v{pack.version}
               </span>
             )}
           </div>
           {pack.description && (
-            <p className="text-xs text-[#8b949e] mt-1 line-clamp-2">{pack.description}</p>
+            <p className="text-xs text-text-secondary mt-1 line-clamp-2">{pack.description}</p>
           )}
         </div>
         <span className={`font-mono text-[10px] px-1.5 py-0.5 border flex-shrink-0 ${STATUS_STYLE[status] ?? STATUS_STYLE['not_installed']}`}>
@@ -49,25 +49,25 @@ function SkillPackCard({ pack }: { pack: SkillPack }) {
       </div>
 
       {pack.skills.length > 0 && (
-        <div className="flex flex-wrap gap-1 border-t border-[#21262d] pt-2">
+        <div className="flex flex-wrap gap-1 border-t border-border-subtle pt-2">
           {pack.skills.slice(0, 6).map((s) => (
-            <span key={s} className="font-mono text-[10px] text-[#8b949e] border border-[#21262d] px-1.5 py-0.5">
+            <span key={s} className="font-mono text-[10px] text-text-secondary border border-border-subtle px-1.5 py-0.5">
               {s}
             </span>
           ))}
           {pack.skills.length > 6 && (
-            <span className="font-mono text-[10px] text-[#6e7681] px-1.5 py-0.5">
+            <span className="font-mono text-[10px] text-text-tertiary px-1.5 py-0.5">
               +{pack.skills.length - 6} more
             </span>
           )}
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-2 border-t border-[#21262d] pt-2">
+      <div className="flex items-center justify-between gap-2 border-t border-border-subtle pt-2">
         <button
           onClick={() => install.mutate(pack.id)}
           disabled={install.isPending || status === 'installing'}
-          className="flex items-center gap-1.5 px-2.5 py-1 font-mono text-[11px] text-[#58a6ff] border border-[#30363d] hover:border-[#58a6ff] disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1 font-mono text-[11px] text-accent border border-border hover:border-accent disabled:opacity-50 transition-colors"
         >
           {install.isPending ? (
             <Loader2 className="w-3 h-3 animate-spin" />
@@ -83,13 +83,13 @@ function SkillPackCard({ pack }: { pack: SkillPack }) {
               <button
                 onClick={() => deletePack.mutate(pack.id)}
                 disabled={deletePack.isPending}
-                className="text-[10px] font-mono text-[#f85149] border border-[#6e0000] px-1.5 py-0.5 hover:bg-[#6e0000]/20 disabled:opacity-50"
+                className="text-[10px] font-mono text-error border border-error px-1.5 py-0.5 hover:bg-error/20 disabled:opacity-50"
               >
                 confirm
               </button>
               <button
                 onClick={() => setConfirming(false)}
-                className="text-[10px] font-mono text-[#6e7681] hover:text-[#8b949e]"
+                className="text-[10px] font-mono text-text-tertiary hover:text-text-secondary"
               >
                 cancel
               </button>
@@ -97,7 +97,7 @@ function SkillPackCard({ pack }: { pack: SkillPack }) {
           ) : (
             <button
               onClick={() => setConfirming(true)}
-              className="p-1 text-[#6e7681] hover:text-[#f85149] transition-colors"
+              className="p-1 text-text-tertiary hover:text-error transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -133,64 +133,64 @@ function CreatePackDialog({ onDone }: { onDone: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/70" onClick={onDone} />
-      <div className="relative bg-[#161b22] border border-[#30363d] w-full max-w-md p-6 shadow-xl">
+      <div className="relative bg-surface border border-border w-full max-w-md p-6 shadow-xl">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-mono text-[13px] font-semibold text-[#e6edf3] uppercase tracking-wide">New Skill Pack</h2>
-          <button onClick={onDone} className="text-[#6e7681] hover:text-[#e6edf3] transition-colors">
+          <h2 className="font-mono text-[13px] font-semibold text-text-primary uppercase tracking-wide">New Skill Pack</h2>
+          <button onClick={onDone} className="text-text-tertiary hover:text-text-primary transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-[#8b949e] mb-1">Name</label>
+            <label className="block text-xs font-mono uppercase tracking-wider text-text-secondary mb-1">Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoFocus
               placeholder="pack name"
-              className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff]"
+              className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent"
             />
           </div>
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-[#8b949e] mb-1">Version</label>
+            <label className="block text-xs font-mono uppercase tracking-wider text-text-secondary mb-1">Version</label>
             <input
               value={version}
               onChange={(e) => setVersion(e.target.value)}
               placeholder="1.0.0"
-              className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff]"
+              className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent"
             />
           </div>
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-[#8b949e] mb-1">Description</label>
+            <label className="block text-xs font-mono uppercase tracking-wider text-text-secondary mb-1">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               placeholder="optional description"
-              className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff] resize-none"
+              className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent resize-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-[#8b949e] mb-1">Skills (comma-separated)</label>
+            <label className="block text-xs font-mono uppercase tracking-wider text-text-secondary mb-1">Skills (comma-separated)</label>
             <input
               value={skillsInput}
               onChange={(e) => setSkillsInput(e.target.value)}
               placeholder="skill-a, skill-b"
-              className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff]"
+              className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent"
             />
           </div>
           <div className="flex justify-end gap-3 pt-1">
             <button
               type="button"
               onClick={onDone}
-              className="px-3 py-1.5 font-mono text-xs text-[#8b949e] border border-[#30363d] hover:border-[#6e7681] transition-colors"
+              className="px-3 py-1.5 font-mono text-xs text-text-secondary border border-border hover:border-text-tertiary transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!name.trim() || createPack.isPending}
-              className="px-3 py-1.5 font-mono text-xs text-white bg-[#1f6feb] border border-[#388bfd] hover:bg-[#388bfd] disabled:opacity-50 transition-colors"
+              className="px-3 py-1.5 font-mono text-xs text-white bg-accent border border-accent hover:bg-accent-hover disabled:opacity-50 transition-colors"
             >
               {createPack.isPending ? 'Creating…' : 'Create'}
             </button>
@@ -210,19 +210,19 @@ function SkillPacksPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between pb-4 border-b border-[#21262d]">
-        <h1 className="font-mono text-[13px] font-semibold text-[#e6edf3] tracking-wide uppercase flex items-center gap-2">
-          <span className="text-[#58a6ff]">~/</span>skill-packs
+      <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
+        <h1 className="font-mono text-[13px] font-semibold text-text-primary tracking-wide uppercase flex items-center gap-2">
+          <span className="text-accent">~/</span>skill-packs
         </h1>
         <div className="flex items-center gap-3">
           {!isLoading && total > 0 && (
-            <span className="font-mono text-xs text-[#8b949e]">
+            <span className="font-mono text-xs text-text-secondary">
               {installed}/{total} installed
             </span>
           )}
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 font-mono text-[11px] text-[#58a6ff] border border-[#30363d] hover:border-[#58a6ff] transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 font-mono text-[11px] text-accent border border-border hover:border-accent transition-colors"
           >
             <Plus className="w-3 h-3" />
             New Pack
@@ -232,12 +232,12 @@ function SkillPacksPage() {
 
       {isLoading && (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-[#58a6ff]" />
+          <Loader2 className="h-6 w-6 animate-spin text-accent" />
         </div>
       )}
 
       {!isLoading && (packs ?? []).length === 0 && (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-[#6e7681]">
+        <div className="flex flex-col items-center justify-center py-20 gap-3 text-text-tertiary">
           <span className="font-mono text-4xl opacity-20">[]</span>
           <span className="font-mono text-sm">no skill packs</span>
         </div>

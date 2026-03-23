@@ -4,6 +4,9 @@ import '@fontsource/inter/latin-600.css'
 import '@fontsource/jetbrains-mono/latin-400.css'
 import './index.css'
 
+import { initializeTheme } from './store/theme'
+initializeTheme()
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'

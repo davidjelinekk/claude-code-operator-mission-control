@@ -80,25 +80,25 @@ function AgentTasksSection({ agentId }: { agentId: string }) {
     abandoned: 'abandoned',
   }
   const statusColor: Record<string, string> = {
-    in_progress: 'text-[#d29922]',
-    inbox: 'text-[#58a6ff]',
-    review: 'text-[#8b949e]',
-    done: 'text-[#3fb950]',
-    abandoned: 'text-[#6e7681]',
+    in_progress: 'text-warning',
+    inbox: 'text-accent',
+    review: 'text-text-secondary',
+    done: 'text-success',
+    abandoned: 'text-text-tertiary',
   }
 
-  if (isLoading) return <div className="h-10 bg-[#21262d] animate-pulse" />
-  if (allTasks.length === 0) return <span className="font-mono text-xs text-[#6e7681]">no assigned tasks</span>
+  if (isLoading) return <div className="h-10 bg-surface-hover animate-pulse" />
+  if (allTasks.length === 0) return <span className="font-mono text-xs text-text-tertiary">no assigned tasks</span>
 
   return (
-    <div className="border-t border-[#21262d] pt-3 flex flex-col gap-3">
+    <div className="border-t border-border-subtle pt-3 flex flex-col gap-3">
       {statusOrder.filter((s) => grouped[s]?.length > 0).map((status) => (
         <div key={status}>
           <div className="flex items-center gap-2 mb-1">
             <span className={`font-mono text-[10px] uppercase tracking-widest ${statusColor[status]}`}>
               {statusLabel[status]}
             </span>
-            <span className="font-mono text-[10px] text-[#6e7681]">({grouped[status].length})</span>
+            <span className="font-mono text-[10px] text-text-tertiary">({grouped[status].length})</span>
           </div>
           <div className="flex flex-col gap-0">
             {grouped[status].slice(0, 10).map((task, i) => (
@@ -106,12 +106,12 @@ function AgentTasksSection({ agentId }: { agentId: string }) {
                 key={task.id}
                 to="/boards/$boardId"
                 params={{ boardId: task.boardId }}
-                className={`flex items-center justify-between gap-2 py-1.5 hover:bg-[#21262d]/40 transition-colors px-1 ${
-                  i < grouped[status].length - 1 ? 'border-b border-[#21262d]' : ''
+                className={`flex items-center justify-between gap-2 py-1.5 hover:bg-surface-hover/40 transition-colors px-1 ${
+                  i < grouped[status].length - 1 ? 'border-b border-border-subtle' : ''
                 }`}
               >
-                <span className="font-mono text-xs text-[#c9d1d9] truncate hover:text-[#58a6ff]">{task.title}</span>
-                <span className="font-mono text-[10px] text-[#6e7681] flex-shrink-0 truncate max-w-[100px]">{task.boardId.slice(0, 8)}</span>
+                <span className="font-mono text-xs text-text-primary truncate hover:text-accent">{task.title}</span>
+                <span className="font-mono text-[10px] text-text-tertiary flex-shrink-0 truncate max-w-[100px]">{task.boardId.slice(0, 8)}</span>
               </Link>
             ))}
           </div>
@@ -122,16 +122,16 @@ function AgentTasksSection({ agentId }: { agentId: string }) {
 }
 
 const STATUS_DOT: Record<Agent['status'], string> = {
-  available: 'bg-[#3fb950]',
-  running: 'bg-[#d29922]',
-  offline: 'bg-[#6e7681]',
-  error: 'bg-[#f85149]',
+  available: 'bg-success',
+  running: 'bg-warning',
+  offline: 'bg-text-tertiary',
+  error: 'bg-error',
 }
 const STATUS_TEXT: Record<Agent['status'], string> = {
-  available: 'text-[#3fb950]',
-  running: 'text-[#d29922]',
-  offline: 'text-[#6e7681]',
-  error: 'text-[#f85149]',
+  available: 'text-success',
+  running: 'text-warning',
+  offline: 'text-text-tertiary',
+  error: 'text-error',
 }
 
 function EditableField({
@@ -167,7 +167,7 @@ function EditableField({
   return (
     <div className="flex flex-col gap-0.5">
       <div className="flex items-center justify-between gap-2">
-        <span className="font-mono text-[10px] text-[#6e7681] uppercase tracking-widest flex-shrink-0">{label}</span>
+        <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest flex-shrink-0">{label}</span>
         {editing ? (
           <div className="flex items-center gap-1 flex-1 justify-end">
             <input
@@ -178,23 +178,23 @@ function EditableField({
                 if (e.key === 'Escape') cancel()
               }}
               autoFocus
-              className="bg-[#0d1117] border border-[#58a6ff] px-2 py-0.5 text-xs font-mono text-[#e6edf3] focus:outline-none max-w-[200px]"
+              className="bg-canvas border border-accent px-2 py-0.5 text-xs font-mono text-text-primary focus:outline-none max-w-[200px]"
             />
-            <button onClick={commit} disabled={isPending} className="text-[#3fb950] hover:text-[#56d364] p-0.5 disabled:opacity-50">
+            <button onClick={commit} disabled={isPending} className="text-success hover:text-success p-0.5 disabled:opacity-50">
               <Check className="w-3 h-3" />
             </button>
-            <button onClick={cancel} className="text-[#6e7681] hover:text-[#8b949e] p-0.5">
+            <button onClick={cancel} className="text-text-tertiary hover:text-text-secondary p-0.5">
               <X className="w-3 h-3" />
             </button>
           </div>
         ) : (
           <div className="flex items-center gap-1.5 justify-end">
             {savedOk && !isError && (
-              <span className="font-mono text-[10px] text-[#3fb950]">Saved</span>
+              <span className="font-mono text-[10px] text-success">Saved</span>
             )}
             <button
               onClick={() => { setDraft(value); setEditing(true) }}
-              className="font-mono text-xs text-[#c9d1d9] hover:text-[#58a6ff] transition-colors text-right truncate max-w-[200px]"
+              className="font-mono text-xs text-text-primary hover:text-accent transition-colors text-right truncate max-w-[200px]"
               title="Click to edit"
             >
               {value || '—'}
@@ -203,7 +203,7 @@ function EditableField({
         )}
       </div>
       {isError && error && (
-        <p className="text-[10px] font-mono text-[#f85149] text-right">{error.message}</p>
+        <p className="text-[10px] font-mono text-error text-right">{error.message}</p>
       )}
     </div>
   )
@@ -222,7 +222,7 @@ function AgentDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-[#58a6ff]" />
+        <Loader2 className="h-6 w-6 animate-spin text-accent" />
       </div>
     )
   }
@@ -230,10 +230,10 @@ function AgentDetailPage() {
   if (isError || !agent) {
     return (
       <div className="flex flex-col gap-4">
-        <Link to="/agents" className="flex items-center gap-1.5 font-mono text-xs text-[#6e7681] hover:text-[#8b949e] w-fit">
+        <Link to="/agents" className="flex items-center gap-1.5 font-mono text-xs text-text-tertiary hover:text-text-secondary w-fit">
           <ArrowLeft className="w-3 h-3" /> back to agents
         </Link>
-        <div className="text-center py-20 font-mono text-[#f85149]">Agent not found</div>
+        <div className="text-center py-20 font-mono text-error">Agent not found</div>
       </div>
     )
   }
@@ -243,19 +243,19 @@ function AgentDetailPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* header */}
-      <div className="flex items-center justify-between pb-4 border-b border-[#21262d]">
+      <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
         <div className="flex items-center gap-3">
-          <Link to="/agents" className="flex items-center gap-1.5 font-mono text-xs text-[#6e7681] hover:text-[#58a6ff] transition-colors">
+          <Link to="/agents" className="flex items-center gap-1.5 font-mono text-xs text-text-tertiary hover:text-accent transition-colors">
             <ArrowLeft className="w-3 h-3" />
           </Link>
-          <div className="w-10 h-10 flex items-center justify-center bg-[#21262d] border border-[#30363d] text-xl">
+          <div className="w-10 h-10 flex items-center justify-center bg-surface-hover border border-border text-xl">
             {'🤖'}
           </div>
           <div>
-            <h1 className="font-mono text-[13px] font-semibold text-[#e6edf3] tracking-wide">
+            <h1 className="font-mono text-[13px] font-semibold text-text-primary tracking-wide">
               {agent.name}
             </h1>
-            <span className="font-mono text-[10px] text-[#6e7681]">{agent.id}</span>
+            <span className="font-mono text-[10px] text-text-tertiary">{agent.id}</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -264,18 +264,18 @@ function AgentDetailPage() {
             <span className={`font-mono text-xs ${STATUS_TEXT[agent.status]}`}>{agent.status}</span>
           </div>
           {showDeleteConfirm ? (
-            <div className="flex items-center gap-2 border border-[#f85149]/40 bg-[#f85149]/10 px-2.5 py-1.5">
-              <span className="font-mono text-xs text-[#f85149]">Delete agent?</span>
+            <div className="flex items-center gap-2 border border-error/40 bg-error/10 px-2.5 py-1.5">
+              <span className="font-mono text-xs text-error">Delete agent?</span>
               <button
                 onClick={() => deleteAgent.mutate(agentId, { onSuccess: () => navigate({ to: '/agents' }) })}
                 disabled={deleteAgent.isPending}
-                className="font-mono text-xs text-[#f85149] hover:text-white border border-[#f85149] px-2 py-0.5 transition-colors disabled:opacity-50"
+                className="font-mono text-xs text-error hover:text-white border border-error px-2 py-0.5 transition-colors disabled:opacity-50"
               >
                 {deleteAgent.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : 'delete'}
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="font-mono text-xs text-[#6e7681] hover:text-[#8b949e] transition-colors"
+                className="font-mono text-xs text-text-tertiary hover:text-text-secondary transition-colors"
               >
                 cancel
               </button>
@@ -283,7 +283,7 @@ function AgentDetailPage() {
           ) : (
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 border border-[#f85149]/40 text-[#f85149] hover:bg-[#f85149]/10 font-mono text-xs transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 border border-error/40 text-error hover:bg-error/10 font-mono text-xs transition-colors"
             >
               <Trash2 className="h-3 w-3" /> delete
             </button>
@@ -293,9 +293,9 @@ function AgentDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* info card */}
-        <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-3">
-          <span className="font-mono text-[10px] text-[#6e7681] uppercase tracking-widest">Info</span>
-          <div className="flex flex-col gap-2.5 border-t border-[#21262d] pt-3">
+        <div className="border border-border bg-surface p-4 flex flex-col gap-3">
+          <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">Info</span>
+          <div className="flex flex-col gap-2.5 border-t border-border-subtle pt-3">
             <EditableField
               label="name"
               value={agent.name}
@@ -315,43 +315,43 @@ function AgentDetailPage() {
               savedOk={patch.isSuccess && lastSavedField === 'description'}
             />
             <div className="flex items-center justify-between gap-2">
-              <span className="font-mono text-[10px] text-[#6e7681] uppercase tracking-widest">model</span>
-              <span className="font-mono text-xs text-[#8b949e] truncate max-w-[200px] text-right">
+              <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">model</span>
+              <span className="font-mono text-xs text-text-secondary truncate max-w-[200px] text-right">
                 {agent.model ?? '—'}
               </span>
             </div>
             {agent.tools && agent.tools.length > 0 && (
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-[10px] text-[#6e7681] uppercase tracking-widest">tools</span>
-                <span className="font-mono text-xs text-[#6e7681] truncate max-w-[200px] text-right">
+                <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">tools</span>
+                <span className="font-mono text-xs text-text-tertiary truncate max-w-[200px] text-right">
                   {agent.tools.join(', ')}
                 </span>
               </div>
             )}
             {agent.permissionMode && (
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-[10px] text-[#6e7681] uppercase tracking-widest">permissions</span>
-                <span className="font-mono text-xs text-[#8b949e]">{agent.permissionMode}</span>
+                <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">permissions</span>
+                <span className="font-mono text-xs text-text-secondary">{agent.permissionMode}</span>
               </div>
             )}
           </div>
         </div>
 
         {/* skills card */}
-        <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-3">
+        <div className="border border-border bg-surface p-4 flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-[#6e7681] uppercase tracking-widest">Skills</span>
-            <span className="font-mono text-[10px] text-[#58a6ff] border border-[#1f6feb]/30 bg-[#1f6feb]/10 px-1.5 py-0.5">
+            <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">Skills</span>
+            <span className="font-mono text-[10px] text-accent border border-accent/30 bg-accent/10 px-1.5 py-0.5">
               {skillKeys.length}
             </span>
           </div>
-          <div className="border-t border-[#21262d] pt-3">
+          <div className="border-t border-border-subtle pt-3">
             {skillKeys.length === 0 ? (
-              <span className="font-mono text-xs text-[#6e7681]">no skills configured</span>
+              <span className="font-mono text-xs text-text-tertiary">no skills configured</span>
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {skillKeys.map((sk) => (
-                  <span key={sk} className="font-mono text-[11px] text-[#8b949e] border border-[#21262d] px-2 py-0.5">
+                  <span key={sk} className="font-mono text-[11px] text-text-secondary border border-border-subtle px-2 py-0.5">
                     {sk}
                   </span>
                 ))}
@@ -361,30 +361,30 @@ function AgentDetailPage() {
         </div>
 
         {/* recent sessions */}
-        <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-3 lg:col-span-2">
+        <div className="border border-border bg-surface p-4 flex flex-col gap-3 lg:col-span-2">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-[#6e7681] uppercase tracking-widest">Recent Activity</span>
-            <span className="font-mono text-[10px] text-[#6e7681]">{(sessions ?? []).length} sessions</span>
+            <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">Recent Activity</span>
+            <span className="font-mono text-[10px] text-text-tertiary">{(sessions ?? []).length} sessions</span>
           </div>
-          <div className="border-t border-[#21262d] pt-3">
+          <div className="border-t border-border-subtle pt-3">
             {(sessions ?? []).length === 0 ? (
-              <span className="font-mono text-xs text-[#6e7681]">no recent sessions</span>
+              <span className="font-mono text-xs text-text-tertiary">no recent sessions</span>
             ) : (
               <div className="flex flex-col gap-0">
                 {(sessions ?? []).slice(0, 10).map((s, i) => (
                   <div
                     key={s.id}
                     className={`flex items-center justify-between gap-3 py-2 ${
-                      i < Math.min((sessions ?? []).length, 10) - 1 ? 'border-b border-[#21262d]' : ''
+                      i < Math.min((sessions ?? []).length, 10) - 1 ? 'border-b border-border-subtle' : ''
                     }`}
                   >
-                    <span className="font-mono text-xs text-[#c9d1d9] truncate">{s.id}</span>
+                    <span className="font-mono text-xs text-text-primary truncate">{s.id}</span>
                     <div className="flex items-center gap-3 flex-shrink-0">
                       {s.status && (
-                        <span className="font-mono text-[10px] text-[#6e7681]">{s.status}</span>
+                        <span className="font-mono text-[10px] text-text-tertiary">{s.status}</span>
                       )}
                       {s.createdAt && (
-                        <span className="font-mono text-[10px] text-[#6e7681]">
+                        <span className="font-mono text-[10px] text-text-tertiary">
                           {new Date(s.createdAt).toLocaleString()}
                         </span>
                       )}
@@ -397,9 +397,9 @@ function AgentDetailPage() {
         </div>
 
         {/* Assigned Tasks section */}
-        <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-3 lg:col-span-2">
+        <div className="border border-border bg-surface p-4 flex flex-col gap-3 lg:col-span-2">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-[10px] text-[#6e7681] uppercase tracking-widest">Assigned Tasks</span>
+            <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">Assigned Tasks</span>
           </div>
           <AgentTasksSection agentId={agentId} />
         </div>

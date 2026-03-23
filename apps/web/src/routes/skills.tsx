@@ -15,7 +15,7 @@ function TypeBadge({ type }: { type: 'skill' | 'mcp_server' }) {
   return (
     <span
       className={`inline-flex items-center px-1.5 py-0.5 text-xs font-mono border ${
-        type === 'skill' ? 'text-[#58a6ff] border-[#1f6feb]' : 'text-[#a5a0ff] border-[#6e40c9]'
+        type === 'skill' ? 'text-accent border-accent' : 'text-purple-400 border-purple-600'
       }`}
     >
       {type === 'skill' ? 'Skill' : 'MCP Server'}
@@ -27,7 +27,7 @@ function InstalledBadge({ installed }: { installed: boolean }) {
   return (
     <span
       className={`inline-flex items-center px-1.5 py-0.5 text-xs font-mono border ${
-        installed ? 'text-[#3fb950] border-[#238636]' : 'text-[#8b949e] border-[#30363d]'
+        installed ? 'text-success border-success' : 'text-text-secondary border-border'
       }`}
     >
       {installed ? 'Installed' : 'Not installed'}
@@ -42,24 +42,24 @@ function SkillCard({ skill, onClick }: { skill: SkillSnapshot; onClick: () => vo
 
   return (
     <div
-      className="break-inside-avoid mb-4 border border-[#30363d] bg-[#161b22] p-5 cursor-pointer hover:border-[#58a6ff] transition-colors"
+      className="break-inside-avoid mb-4 border border-border bg-surface p-5 cursor-pointer hover:border-accent transition-colors"
       onClick={onClick}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="font-semibold text-[#e6edf3] leading-tight">{skill.displayName}</p>
+        <p className="font-semibold text-text-primary leading-tight">{skill.displayName}</p>
         <TypeBadge type={skill.skillType} />
       </div>
 
       {skill.description && (
-        <p className="text-sm text-[#8b949e] mb-3 line-clamp-3">{skill.description}</p>
+        <p className="text-sm text-text-secondary mb-3 line-clamp-3">{skill.description}</p>
       )}
 
       {skill.requiredEnv && skill.requiredEnv.length > 0 && (
         <div className="mb-3">
-          <p className="text-xs font-medium uppercase tracking-wider text-[#6e7681] mb-1">Required env</p>
+          <p className="text-xs font-medium uppercase tracking-wider text-text-tertiary mb-1">Required env</p>
           <div className="flex flex-wrap gap-1">
             {skill.requiredEnv.map((v) => (
-              <span key={v} className="inline-flex items-center gap-1 border border-[#9e6a03] px-1.5 py-0.5 text-[#d29922] text-xs font-mono">
+              <span key={v} className="inline-flex items-center gap-1 border border-warning px-1.5 py-0.5 text-warning text-xs font-mono">
                 <AlertTriangle className="w-3 h-3" />
                 {v}
               </span>
@@ -74,7 +74,7 @@ function SkillCard({ skill, onClick }: { skill: SkillSnapshot; onClick: () => vo
             <AgentChip key={id} emoji="🤖" name={id} />
           ))}
           {extraCount > 0 && (
-            <span className="inline-flex items-center border border-[#30363d] bg-[#0d1117] px-2 py-0.5 text-xs font-mono text-[#8b949e]">
+            <span className="inline-flex items-center border border-border bg-canvas px-2 py-0.5 text-xs font-mono text-text-secondary">
               +{extraCount} more
             </span>
           )}
@@ -90,17 +90,17 @@ function SkillDetailSheet({ skill, onClose }: { skill: SkillSnapshot; onClose: (
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-[#0d1117] border-l border-[#30363d] overflow-y-auto h-full p-6 shadow-2xl">
+      <div className="relative w-full max-w-lg bg-canvas border-l border-border overflow-y-auto h-full p-6 shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 hover:bg-[#21262d] text-[#8b949e] hover:text-[#e6edf3] transition-colors"
+          className="absolute top-4 right-4 p-1.5 hover:bg-surface-hover text-text-secondary hover:text-text-primary transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
         <div className="flex items-start gap-3 mb-6 pr-10">
           <div>
-            <h2 className="text-xl font-semibold text-[#e6edf3] mb-1">{skill.displayName}</h2>
+            <h2 className="text-xl font-semibold text-text-primary mb-1">{skill.displayName}</h2>
             <div className="flex gap-2">
               <TypeBadge type={skill.skillType} />
               <InstalledBadge installed={skill.isInstalled} />
@@ -110,21 +110,21 @@ function SkillDetailSheet({ skill, onClose }: { skill: SkillSnapshot; onClose: (
 
         {skill.description && (
           <div className="mb-6">
-            <p className="text-xs font-medium uppercase tracking-wider text-[#6e7681] mb-2">Description</p>
-            <p className="text-sm text-[#8b949e]">{skill.description}</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-text-tertiary mb-2">Description</p>
+            <p className="text-sm text-text-secondary">{skill.description}</p>
           </div>
         )}
 
         {skill.requiredEnv && skill.requiredEnv.length > 0 && (
           <div className="mb-6">
-            <p className="text-xs font-medium uppercase tracking-wider text-[#6e7681] mb-2">Required Environment Variables</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-text-tertiary mb-2">Required Environment Variables</p>
             <table className="w-full text-sm">
               <tbody>
                 {skill.requiredEnv.map((v) => (
-                  <tr key={v} className="border-b border-[#21262d]">
-                    <td className="py-2 font-mono text-[#d29922]">{v}</td>
+                  <tr key={v} className="border-b border-border-subtle">
+                    <td className="py-2 font-mono text-warning">{v}</td>
                     <td className="py-2 text-right">
-                      <AlertTriangle className="w-3.5 h-3.5 text-[#d29922] inline-block" />
+                      <AlertTriangle className="w-3.5 h-3.5 text-warning inline-block" />
                     </td>
                   </tr>
                 ))}
@@ -135,10 +135,10 @@ function SkillDetailSheet({ skill, onClose }: { skill: SkillSnapshot; onClose: (
 
         {skill.dependencies && skill.dependencies.length > 0 && (
           <div className="mb-6">
-            <p className="text-xs font-medium uppercase tracking-wider text-[#6e7681] mb-2">Dependencies</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-text-tertiary mb-2">Dependencies</p>
             <ul className="space-y-1">
               {skill.dependencies.map((d) => (
-                <li key={d} className="text-sm text-[#8b949e] font-mono bg-[#161b22] border border-[#30363d] px-2 py-1">{d}</li>
+                <li key={d} className="text-sm text-text-secondary font-mono bg-surface border border-border px-2 py-1">{d}</li>
               ))}
             </ul>
           </div>
@@ -146,7 +146,7 @@ function SkillDetailSheet({ skill, onClose }: { skill: SkillSnapshot; onClose: (
 
         {skill.agents && skill.agents.length > 0 && (
           <div className="mb-6">
-            <p className="text-xs font-medium uppercase tracking-wider text-[#6e7681] mb-2">Assigned Agents</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-text-tertiary mb-2">Assigned Agents</p>
             <div className="flex flex-wrap gap-2">
               {skill.agents.map((id) => (
                 <AgentChip key={id} emoji="🤖" name={id} />
@@ -157,14 +157,14 @@ function SkillDetailSheet({ skill, onClose }: { skill: SkillSnapshot; onClose: (
 
         {skill.configJson && (
           <div className="mb-6">
-            <p className="text-xs font-medium uppercase tracking-wider text-[#6e7681] mb-2">Config</p>
-            <pre className="text-xs font-mono text-[#8b949e] bg-[#161b22] p-4 overflow-x-auto border border-[#30363d]">
+            <p className="text-xs font-medium uppercase tracking-wider text-text-tertiary mb-2">Config</p>
+            <pre className="text-xs font-mono text-text-secondary bg-surface p-4 overflow-x-auto border border-border">
               {JSON.stringify(skill.configJson, null, 2)}
             </pre>
           </div>
         )}
 
-        <p className="text-xs font-mono text-[#6e7681]">
+        <p className="text-xs font-mono text-text-tertiary">
           Scanned {new Date(skill.scannedAt).toLocaleString()}
         </p>
       </div>
@@ -186,7 +186,7 @@ function SkillsPage() {
   return (
     <>
       <div className="flex items-center gap-3 mb-5">
-        <div className="flex border border-[#30363d] overflow-hidden">
+        <div className="flex border border-border overflow-hidden">
           {([['all', 'All'], ['skill', 'Skills'], ['mcp_server', 'MCP Servers']] as [FilterType, string][]).map(
             ([val, label]) => (
               <button
@@ -194,8 +194,8 @@ function SkillsPage() {
                 onClick={() => setFilter(val)}
                 className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                   filter === val
-                    ? 'bg-[#1f6feb] border-r border-[#388bfd] text-white'
-                    : 'bg-[#161b22] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d]'
+                    ? 'bg-accent border-r border-accent text-white'
+                    : 'bg-surface text-text-secondary hover:text-text-primary hover:bg-surface-hover'
                 }`}
               >
                 {label}
@@ -206,7 +206,7 @@ function SkillsPage() {
         <button
           onClick={() => refresh.mutate()}
           disabled={refresh.isPending}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#30363d] bg-[#21262d] text-[#e6edf3] hover:bg-[#30363d] transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm border border-border bg-surface-hover text-text-primary hover:bg-surface-hover transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${refresh.isPending ? 'animate-spin' : ''}`} />
           Refresh
@@ -214,11 +214,11 @@ function SkillsPage() {
       </div>
 
       {isLoading && (
-        <div className="text-center py-16 text-[#6e7681]">Loading skills…</div>
+        <div className="text-center py-16 text-text-tertiary">Loading skills...</div>
       )}
 
       {!isLoading && filtered.length === 0 && (
-        <div className="text-center py-16 text-[#6e7681]">No skills found</div>
+        <div className="text-center py-16 text-text-tertiary">No skills found</div>
       )}
 
       <div className="columns-1 md:columns-2 xl:columns-3 gap-4">
@@ -234,16 +234,16 @@ function SkillsPage() {
   )
 }
 
-// ─── Skill Packs ─────────────────────────────────────────────────────────────
+// --- Skill Packs ---
 
 function PackInstallBadge({ status }: { status: SkillPack['installStatus'] }) {
   if (status === 'installed') {
-    return <span className="text-[10px] font-mono px-1.5 py-0.5 border text-[#3fb950] border-[#238636]">installed</span>
+    return <span className="text-[10px] font-mono px-1.5 py-0.5 border text-success border-success">installed</span>
   }
   if (status === 'installing') {
-    return <span className="text-[10px] font-mono px-1.5 py-0.5 border text-[#58a6ff] border-[#1f6feb] animate-pulse">installing…</span>
+    return <span className="text-[10px] font-mono px-1.5 py-0.5 border text-accent border-accent animate-pulse">installing...</span>
   }
-  return <span className="text-[10px] font-mono px-1.5 py-0.5 border text-[#6e7681] border-[#30363d]">not installed</span>
+  return <span className="text-[10px] font-mono px-1.5 py-0.5 border text-text-tertiary border-border">not installed</span>
 }
 
 function PackCard({ pack }: { pack: SkillPack }) {
@@ -256,12 +256,12 @@ function PackCard({ pack }: { pack: SkillPack }) {
   }
 
   return (
-    <div className="border border-[#30363d] bg-[#161b22] p-5">
+    <div className="border border-border bg-surface p-5">
       <div className="flex items-start justify-between gap-2 mb-2">
-        <span className="font-mono text-sm font-semibold text-[#e6edf3]">{pack.name}</span>
+        <span className="font-mono text-sm font-semibold text-text-primary">{pack.name}</span>
         <div className="flex items-center gap-2 flex-shrink-0">
           {pack.version && (
-            <span className="text-[10px] font-mono px-1.5 py-0.5 border border-[#30363d] text-[#6e7681]">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 border border-border text-text-tertiary">
               v{pack.version}
             </span>
           )}
@@ -269,20 +269,20 @@ function PackCard({ pack }: { pack: SkillPack }) {
         </div>
       </div>
       {pack.description && (
-        <p className="text-xs text-[#8b949e] mb-3 line-clamp-2">{pack.description}</p>
+        <p className="text-xs text-text-secondary mb-3 line-clamp-2">{pack.description}</p>
       )}
       <div className="flex items-center justify-between mt-2">
-        <span className="text-[11px] font-mono text-[#6e7681]">
+        <span className="text-[11px] font-mono text-text-tertiary">
           {pack.skills.length} skill{pack.skills.length !== 1 ? 's' : ''}
         </span>
         {pack.installStatus !== 'installed' && (
           <button
             onClick={handleInstall}
             disabled={installing || install.isPending}
-            className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-mono text-[#58a6ff] border border-[#30363d] hover:border-[#58a6ff] disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-mono text-accent border border-border hover:border-accent disabled:opacity-50 transition-colors"
           >
             <Download className="w-3 h-3" />
-            {installing ? 'Installing…' : 'Install'}
+            {installing ? 'Installing...' : 'Install'}
           </button>
         )}
       </div>
@@ -310,37 +310,37 @@ function CreatePackDialog({ onDone }: { onDone: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/70" onClick={onDone} />
-      <div className="relative bg-[#161b22] border border-[#30363d] w-full max-w-md p-6 shadow-xl">
+      <div className="relative bg-surface border border-border w-full max-w-md p-6 shadow-xl">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="font-mono text-[13px] font-semibold text-[#e6edf3] uppercase tracking-wide">New Pack</h2>
-          <button onClick={onDone} className="text-[#6e7681] hover:text-[#e6edf3]"><X className="w-4 h-4" /></button>
+          <h2 className="font-mono text-[13px] font-semibold text-text-primary uppercase tracking-wide">New Pack</h2>
+          <button onClick={onDone} className="text-text-tertiary hover:text-text-primary"><X className="w-4 h-4" /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-[#8b949e] mb-1">Name</label>
+            <label className="block text-xs font-mono uppercase tracking-wider text-text-secondary mb-1">Name</label>
             <input value={name} onChange={(e) => setName(e.target.value)} autoFocus placeholder="pack name"
-              className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff]" />
+              className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent" />
           </div>
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-[#8b949e] mb-1">Description</label>
+            <label className="block text-xs font-mono uppercase tracking-wider text-text-secondary mb-1">Description</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder="optional"
-              className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff] resize-none" />
+              className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent resize-none" />
           </div>
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-[#8b949e] mb-1">Skills (comma-separated)</label>
+            <label className="block text-xs font-mono uppercase tracking-wider text-text-secondary mb-1">Skills (comma-separated)</label>
             <input value={skillsRaw} onChange={(e) => setSkillsRaw(e.target.value)} placeholder="skill-a, skill-b"
-              className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff]" />
+              className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent" />
           </div>
           <div>
-            <label className="block text-xs font-mono uppercase tracking-wider text-[#8b949e] mb-1">MCP Servers (JSON)</label>
+            <label className="block text-xs font-mono uppercase tracking-wider text-text-secondary mb-1">MCP Servers (JSON)</label>
             <textarea value={mcpRaw} onChange={(e) => setMcpRaw(e.target.value)} rows={3} placeholder='{}'
-              className="w-full bg-[#0d1117] border border-[#30363d] px-3 py-2 text-sm font-mono text-[#e6edf3] placeholder-[#6e7681] focus:outline-none focus:border-[#58a6ff] resize-none" />
+              className="w-full bg-canvas border border-border px-3 py-2 text-sm font-mono text-text-primary placeholder-text-tertiary focus:outline-none focus:border-accent resize-none" />
           </div>
           <div className="flex justify-end gap-3 pt-1">
-            <button type="button" onClick={onDone} className="px-3 py-1.5 font-mono text-xs text-[#8b949e] border border-[#30363d] hover:border-[#6e7681] transition-colors">Cancel</button>
+            <button type="button" onClick={onDone} className="px-3 py-1.5 font-mono text-xs text-text-secondary border border-border hover:border-text-tertiary transition-colors">Cancel</button>
             <button type="submit" disabled={!name.trim() || createPack.isPending}
-              className="px-3 py-1.5 font-mono text-xs text-white bg-[#1f6feb] border border-[#388bfd] hover:bg-[#388bfd] disabled:opacity-50 transition-colors">
-              {createPack.isPending ? 'Creating…' : 'Create'}
+              className="px-3 py-1.5 font-mono text-xs text-white bg-accent border border-accent hover:bg-accent-hover disabled:opacity-50 transition-colors">
+              {createPack.isPending ? 'Creating...' : 'Create'}
             </button>
           </div>
         </form>
@@ -358,15 +358,15 @@ function PacksPage() {
       <div className="flex justify-end mb-5">
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 font-mono text-[11px] text-[#58a6ff] border border-[#30363d] hover:border-[#58a6ff] transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 font-mono text-[11px] text-accent border border-border hover:border-accent transition-colors"
         >
           <Plus className="w-3 h-3" />
           New Pack
         </button>
       </div>
-      {isLoading && <div className="text-center py-16 text-[#6e7681]">Loading packs…</div>}
+      {isLoading && <div className="text-center py-16 text-text-tertiary">Loading packs...</div>}
       {!isLoading && (packs ?? []).length === 0 && (
-        <div className="text-center py-16 text-[#6e7681]">No skill packs</div>
+        <div className="text-center py-16 text-text-tertiary">No skill packs</div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {(packs ?? []).map((pack) => (
@@ -385,19 +385,19 @@ function SkillsPageWrapper() {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between border-b border-[#21262d] pb-4 mb-5">
-        <h1 className="font-mono text-[13px] font-semibold text-[#e6edf3] tracking-wide uppercase flex items-center gap-2">
-          <span className="text-[#58a6ff]">~/</span>skills
+      <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-5">
+        <h1 className="font-mono text-[13px] font-semibold text-text-primary tracking-wide uppercase flex items-center gap-2">
+          <span className="text-accent">~/</span>skills
         </h1>
-        <div className="flex border border-[#30363d] overflow-hidden">
+        <div className="flex border border-border overflow-hidden">
           {(['skills', 'packs'] as PageTab[]).map((t) => (
             <button
               key={t}
               onClick={() => setPageTab(t)}
               className={`px-3 py-1.5 text-xs font-mono uppercase transition-colors ${
                 pageTab === t
-                  ? 'bg-[#1f6feb] text-white'
-                  : 'bg-[#161b22] text-[#8b949e] hover:text-[#e6edf3] hover:bg-[#21262d]'
+                  ? 'bg-accent text-white'
+                  : 'bg-surface text-text-secondary hover:text-text-primary hover:bg-surface-hover'
               }`}
             >
               {t}

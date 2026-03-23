@@ -18,9 +18,12 @@ import {
   CheckSquare,
   Server,
   Terminal,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/store/ui'
+import { useThemeStore } from '@/store/theme'
 import { useAllPendingApprovals } from '@/hooks/api/approvals'
 
 type NavItem = {
@@ -36,10 +39,10 @@ type NavGroup = {
 }
 
 const GROUP_COLORS: Record<string, string> = {
-  workspace: '#58a6ff',
-  agents:    '#d29922',
+  workspace: 'hsl(var(--color-accent))',
+  agents:    'hsl(var(--color-warning))',
   observe:   '#a371f7',
-  system:    '#6e7681',
+  system:    'hsl(var(--color-text-tertiary))',
 }
 
 const NAV_GROUPS: NavGroup[] = [
@@ -87,6 +90,33 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ]
 
+function ThemeToggle({ collapsed }: { collapsed: boolean }) {
+  const { theme, setTheme, resolvedTheme } = useThemeStore()
+  const isDark = resolvedTheme() === 'dark'
+
+  function toggle() {
+    setTheme(isDark ? 'light' : 'dark')
+  }
+
+  return (
+    <div className="border-t border-border-subtle p-2 flex-shrink-0">
+      <button
+        onClick={toggle}
+        className={cn(
+          'flex items-center gap-2 w-full rounded px-2 py-1.5 text-text-tertiary hover:text-text-secondary hover:bg-surface-hover transition-colors',
+          collapsed && 'justify-center',
+        )}
+        title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      >
+        {isDark ? <Sun className="h-3.5 w-3.5 flex-shrink-0" /> : <Moon className="h-3.5 w-3.5 flex-shrink-0" />}
+        {!collapsed && (
+          <span className="font-mono text-[11px]">{isDark ? 'Light mode' : 'Dark mode'}</span>
+        )}
+      </button>
+    </div>
+  )
+}
+
 export function Sidebar() {
   const collapsed = useUIStore((s) => s.sidebarCollapsed)
   const routerState = useRouterState()
@@ -97,15 +127,15 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'flex flex-col bg-[#0d1117] border-r border-[#21262d] h-screen transition-all duration-200 overflow-hidden flex-shrink-0',
+        'flex flex-col bg-sidebar border-r border-border-subtle h-screen transition-all duration-200 overflow-hidden flex-shrink-0',
         collapsed ? 'w-12' : 'w-48',
       )}
     >
-      {/* Header — matches topbar h-[72px] */}
+      {/* Header — matches topbar h-14 */}
       <Link
         to="/"
         className={cn(
-          'h-[72px] border-b border-[#21262d] flex-shrink-0 select-none hover:bg-[#161b22] transition-colors',
+          'h-14 border-b border-border-subtle flex-shrink-0 select-none hover:bg-surface transition-colors',
           collapsed ? 'flex items-center justify-center' : 'flex items-center gap-2.5 px-3',
         )}
       >
@@ -116,29 +146,29 @@ export function Sidebar() {
           viewBox="0 0 100 100"
           fill="none"
           className="flex-shrink-0"
-          style={{ filter: 'drop-shadow(0 0 4px #58a6ff33)' }}
+          style={{ filter: 'drop-shadow(0 0 4px hsl(var(--color-accent) / 0.2))' }}
         >
           {/* Bold chevron > */}
-          <path d="M16 22 L54 50 L16 78" stroke="#58a6ff" strokeWidth="12" strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit="10" />
+          <path d="M16 22 L54 50 L16 78" stroke="hsl(var(--color-accent))" strokeWidth="12" strokeLinecap="square" strokeLinejoin="miter" strokeMiterlimit="10" />
           {/* Dispatch fork */}
-          <line x1="64" y1="44" x2="78" y2="28" stroke="#58a6ff" strokeWidth="4" strokeLinecap="round" opacity="0.5" />
-          <line x1="64" y1="56" x2="78" y2="72" stroke="#58a6ff" strokeWidth="4" strokeLinecap="round" opacity="0.5" />
+          <line x1="64" y1="44" x2="78" y2="28" stroke="hsl(var(--color-accent))" strokeWidth="4" strokeLinecap="round" opacity="0.5" />
+          <line x1="64" y1="56" x2="78" y2="72" stroke="hsl(var(--color-accent))" strokeWidth="4" strokeLinecap="round" opacity="0.5" />
           {/* Operator node */}
-          <circle cx="60" cy="50" r="11" fill="#58a6ff" />
-          <circle cx="60" cy="50" r="5" fill="#0d1117" />
+          <circle cx="60" cy="50" r="11" fill="hsl(var(--color-accent))" />
+          <circle cx="60" cy="50" r="5" fill="hsl(var(--color-canvas))" />
           {/* Signal dots */}
-          <circle cx="82" cy="24" r="4" fill="#58a6ff" opacity="0.45" />
-          <circle cx="84" cy="38" r="3" fill="#58a6ff" opacity="0.55" />
-          <circle cx="84" cy="62" r="3" fill="#58a6ff" opacity="0.45" />
-          <circle cx="82" cy="76" r="4" fill="#58a6ff" opacity="0.35" />
+          <circle cx="82" cy="24" r="4" fill="hsl(var(--color-accent))" opacity="0.45" />
+          <circle cx="84" cy="38" r="3" fill="hsl(var(--color-accent))" opacity="0.55" />
+          <circle cx="84" cy="62" r="3" fill="hsl(var(--color-accent))" opacity="0.45" />
+          <circle cx="82" cy="76" r="4" fill="hsl(var(--color-accent))" opacity="0.35" />
         </svg>
 
         {!collapsed && (
           <div className="flex flex-col leading-none">
-            <span className="font-mono font-bold text-[13px] tracking-[0.2em] text-[#e6edf3]">
-              CC<span className="text-[#58a6ff]">_</span>
+            <span className="font-mono font-bold text-[13px] tracking-[0.2em] text-text-primary">
+              CC<span className="text-accent">_</span>
             </span>
-            <span className="font-mono text-[9px] tracking-[0.3em] text-[#6e7681] uppercase mt-0.5">
+            <span className="font-mono text-[9px] tracking-[0.3em] text-text-tertiary uppercase mt-0.5">
               operator
             </span>
           </div>
@@ -160,12 +190,12 @@ export function Sidebar() {
                       title={label}
                       className={cn(
                         'relative flex items-center justify-center py-2 transition-colors',
-                        active ? 'text-[#58a6ff]' : 'text-[#6e7681] hover:text-[#8b949e]',
+                        active ? 'text-accent' : 'text-text-tertiary hover:text-text-secondary',
                       )}
                     >
                       <Icon className="h-3.5 w-3.5" />
                       {label === 'approvals' && pendingCount > 0 && (
-                        <span className="absolute top-1 right-2 w-1.5 h-1.5 rounded-full bg-[#f85149]" />
+                        <span className="absolute top-1 right-2 w-1.5 h-1.5 rounded-full bg-error" />
                       )}
                     </Link>
                   </li>
@@ -182,11 +212,11 @@ export function Sidebar() {
                 <div className="px-3 py-1 mt-3 flex items-center gap-1.5">
                   <span
                     className="w-1 h-1 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: GROUP_COLORS[group] ?? '#6e7681' }}
+                    style={{ backgroundColor: GROUP_COLORS[group] ?? 'hsl(var(--color-text-tertiary))' }}
                   />
                   <span
                     className="font-mono text-[10px] tracking-[0.12em] uppercase select-none"
-                    style={{ color: GROUP_COLORS[group] ?? '#6e7681' }}
+                    style={{ color: GROUP_COLORS[group] ?? 'hsl(var(--color-text-tertiary))' }}
                   >
                     {group}
                   </span>
@@ -202,17 +232,17 @@ export function Sidebar() {
                           className={cn(
                             'flex items-center gap-2.5 px-3 py-[6px] font-mono text-[12px] transition-colors border-l-[3px]',
                             active
-                              ? 'border-[#58a6ff] bg-[#161b22] text-[#e6edf3]'
-                              : 'border-transparent text-[#8b949e] hover:bg-[#161b22] hover:text-[#c9d1d9]',
+                              ? 'border-accent bg-surface text-text-primary'
+                              : 'border-transparent text-text-secondary hover:bg-surface hover:text-text-primary',
                           )}
                         >
                           <Icon className={cn(
                             'h-3 w-3 flex-shrink-0',
-                            active ? 'text-[#58a6ff]' : '',
+                            active ? 'text-accent' : '',
                           )} />
                           <span>{label}</span>
                           {label === 'approvals' && pendingCount > 0 && (
-                            <span className="ml-auto font-mono text-[9px] bg-[#f85149] text-white rounded-full px-1 min-w-[14px] text-center">
+                            <span className="ml-auto font-mono text-[9px] bg-error text-white rounded-full px-1 min-w-[14px] text-center">
                               {pendingCount > 99 ? '99+' : pendingCount}
                             </span>
                           )}
@@ -226,6 +256,9 @@ export function Sidebar() {
           </ul>
         )}
       </nav>
+
+      {/* Theme toggle */}
+      <ThemeToggle collapsed={collapsed} />
     </aside>
   )
 }

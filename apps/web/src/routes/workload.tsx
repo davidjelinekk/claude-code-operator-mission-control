@@ -12,9 +12,9 @@ export const Route = createFileRoute('/workload')({
 })
 
 const PRIORITY_COLOR: Record<Task['priority'], string> = {
-  high: 'text-[#f85149]',
-  medium: 'text-[#d29922]',
-  low: 'text-[#8b949e]',
+  high: 'text-error',
+  medium: 'text-warning',
+  low: 'text-text-secondary',
 }
 
 function PriorityBadge({ priority }: { priority: Task['priority'] }) {
@@ -58,12 +58,12 @@ function WorkloadPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between pb-4 border-b border-[#21262d]">
-        <h1 className="font-mono text-[13px] font-semibold text-[#e6edf3] tracking-wide uppercase flex items-center gap-2">
-          <span className="text-[#58a6ff]">~/</span>workload
+      <div className="flex items-center justify-between pb-4 border-b border-border-subtle">
+        <h1 className="font-mono text-[13px] font-semibold text-text-primary tracking-wide uppercase flex items-center gap-2">
+          <span className="text-accent">~/</span>workload
         </h1>
         {!isLoading && (
-          <span className="font-mono text-xs text-[#8b949e]">
+          <span className="font-mono text-xs text-text-secondary">
             {inProgressCount} in progress · {queueCount} queued
           </span>
         )}
@@ -71,50 +71,50 @@ function WorkloadPage() {
 
       {isLoading && (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-[#58a6ff]" />
+          <Loader2 className="h-6 w-6 animate-spin text-accent" />
         </div>
       )}
 
       {!isLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="flex flex-col gap-4">
-            <span className="font-mono text-[10px] text-[#6e7681] uppercase tracking-widest">
+            <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">
               in progress by agent
             </span>
 
             {grouped.size === 0 ? (
-              <div className="border border-[#30363d] bg-[#161b22] p-4 flex items-center justify-center py-12">
-                <span className="font-mono text-xs text-[#6e7681]">No in-progress tasks</span>
+              <div className="border border-border bg-surface p-4 flex items-center justify-center py-12">
+                <span className="font-mono text-xs text-text-tertiary">No in-progress tasks</span>
               </div>
             ) : (
               Array.from(grouped.entries()).map(([agentId, tasks]) => (
-                <div key={agentId} className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-3">
+                <div key={agentId} className="border border-border bg-surface p-4 flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-xs text-[#e6edf3] truncate">
+                    <span className="font-mono text-xs text-text-primary truncate">
                       {agentId === '__unassigned__' ? 'Unassigned' : agentName(agentId)}
                     </span>
                     <span className={`font-mono text-[10px] px-1.5 py-0.5 flex-shrink-0 border ${
                       tasks.length > 6
-                        ? 'text-[#f85149] bg-[#f85149]/10 border-[#f85149]/30'
+                        ? 'text-error bg-error/10 border-error/30'
                         : tasks.length >= 3
-                        ? 'text-[#d29922] bg-[#d29922]/10 border-[#d29922]/30'
-                        : 'text-[#3fb950] bg-[#3fb950]/10 border-[#3fb950]/30'
+                        ? 'text-warning bg-warning/10 border-warning/30'
+                        : 'text-success bg-success/10 border-success/30'
                     }`}>
                       {tasks.length}
                     </span>
                   </div>
-                  <ul className="flex flex-col gap-2 border-t border-[#21262d] pt-3">
+                  <ul className="flex flex-col gap-2 border-t border-border-subtle pt-3">
                     {tasks.map((task) => (
                       <li key={task.id} className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <PriorityBadge priority={task.priority} />
-                          <span className="font-mono text-xs text-[#c9d1d9] truncate" title={task.title}>{task.title}</span>
+                          <span className="font-mono text-xs text-text-primary truncate" title={task.title}>{task.title}</span>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <span className={`font-mono text-[10px] ${
                             (() => {
                               const h = task.inProgressAt ? Math.floor((Date.now() - new Date(task.inProgressAt).getTime()) / 3600000) : 0
-                              return h > 4 ? 'text-[#d29922]' : 'text-[#6e7681]'
+                              return h > 4 ? 'text-warning' : 'text-text-tertiary'
                             })()
                           }`}>
                             {relativeTime(task.inProgressAt)}
@@ -122,7 +122,7 @@ function WorkloadPage() {
                           <button
                             onClick={() => cancelTask.mutate({ id: task.id })}
                             disabled={cancelTask.isPending}
-                            className="font-mono text-[9px] text-[#6e7681] border border-[#30363d] px-1.5 py-0.5 hover:text-[#f85149] hover:border-[#da3633]/50 transition-colors disabled:opacity-50"
+                            className="font-mono text-[9px] text-text-tertiary border border-border px-1.5 py-0.5 hover:text-error hover:border-error/50 transition-colors disabled:opacity-50"
                           >
                             cancel
                           </button>
@@ -136,34 +136,34 @@ function WorkloadPage() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <span className="font-mono text-[10px] text-[#6e7681] uppercase tracking-widest">
+            <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">
               inbox queue
             </span>
 
             {(queue.data ?? []).length === 0 ? (
-              <div className="border border-[#30363d] bg-[#161b22] p-4 flex items-center justify-center py-12">
-                <span className="font-mono text-xs text-[#6e7681]">Queue is empty</span>
+              <div className="border border-border bg-surface p-4 flex items-center justify-center py-12">
+                <span className="font-mono text-xs text-text-tertiary">Queue is empty</span>
               </div>
             ) : (
-              <div className="border border-[#30363d] bg-[#161b22] p-4 flex flex-col gap-0">
+              <div className="border border-border bg-surface p-4 flex flex-col gap-0">
                 {(queue.data ?? []).map((task, i) => (
                   <div
                     key={task.id}
                     className={`flex items-center justify-between gap-2 py-2 ${
-                      i < (queue.data ?? []).length - 1 ? 'border-b border-[#21262d]' : ''
+                      i < (queue.data ?? []).length - 1 ? 'border-b border-border-subtle' : ''
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <PriorityBadge priority={task.priority} />
-                      <span className="font-mono text-xs text-[#c9d1d9] truncate" title={task.title}>{task.title}</span>
+                      <span className="font-mono text-xs text-text-primary truncate" title={task.title}>{task.title}</span>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
                       {task.boardId && (
-                        <span className="font-mono text-[10px] text-[#6e7681] truncate max-w-[100px]">
+                        <span className="font-mono text-[10px] text-text-tertiary truncate max-w-[100px]">
                           {boardsById.get(task.boardId) ?? task.boardId.slice(0, 8)}
                         </span>
                       )}
-                      <span className="font-mono text-[10px] text-[#6e7681]">
+                      <span className="font-mono text-[10px] text-text-tertiary">
                         {relativeTime(task.createdAt)}
                       </span>
                     </div>

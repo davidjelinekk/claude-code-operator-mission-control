@@ -106,16 +106,16 @@ function AgentNode({ data }: { data: FlowNode }) {
     >
       <div className="flex items-center gap-1.5 overflow-hidden">
         {data.emoji && <span style={{ fontSize: 14 }}>{data.emoji}</span>}
-        <span className="text-[11px] font-medium text-[#e6edf3] truncate flex-1">{data.name}</span>
+        <span className="text-[11px] font-medium text-text-primary truncate flex-1">{data.name}</span>
         <StatusDot status={data.isOnline ? 'online' : 'offline'} />
       </div>
       <div className="text-[10px] mt-1">
         {data.hasActiveSession ? (
-          <span className="text-[#3fb950] font-mono">● active</span>
+          <span className="text-success font-mono">● active</span>
         ) : data.hasEdges ? (
-          <span className="text-[#58a6ff] font-mono">· in window</span>
+          <span className="text-accent font-mono">· in window</span>
         ) : (
-          <span className="text-[#6e7681] font-mono">· idle</span>
+          <span className="text-text-tertiary font-mono">· idle</span>
         )}
       </div>
     </div>
@@ -178,15 +178,15 @@ function FlowPage() {
         <Controls style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: 0 }} />
 
         <Panel position="top-right">
-          <div className="flex items-center gap-1 border border-[#30363d] bg-[#161b22] p-1">
+          <div className="flex items-center gap-1 border border-border bg-surface p-1">
             {TIME_WINDOWS.map((w) => (
               <button
                 key={w}
                 onClick={() => setWindow(w)}
                 className={`px-3 py-1.5 text-xs font-mono font-medium transition-colors ${
                   window === w
-                    ? 'bg-[#1f6feb] border border-[#388bfd] text-white'
-                    : 'text-[#8b949e] hover:bg-[#21262d] hover:text-[#e6edf3]'
+                    ? 'bg-accent border border-accent text-white'
+                    : 'text-text-secondary hover:bg-surface-hover hover:text-text-primary'
                 }`}
               >
                 {w}
@@ -197,11 +197,11 @@ function FlowPage() {
 
         {!hasActivity && (
           <Panel position="bottom-center">
-            <div className="mb-8 border border-[#30363d] bg-[#161b22] px-5 py-3 text-center">
-              <p className="font-mono text-[11px] text-[#8b949e]">No agent activity in this window.</p>
-              <p className="font-mono text-[10px] text-[#6e7681] mt-1">
+            <div className="mb-8 border border-border bg-surface px-5 py-3 text-center">
+              <p className="font-mono text-[11px] text-text-secondary">No agent activity in this window.</p>
+              <p className="font-mono text-[10px] text-text-tertiary mt-1">
                 Edges appear when tasks are dispatched to agents or agents post flow edges via{' '}
-                <span className="text-[#58a6ff]">POST /api/flow/edges</span>.
+                <span className="text-accent">POST /api/flow/edges</span>.
               </p>
             </div>
           </Panel>

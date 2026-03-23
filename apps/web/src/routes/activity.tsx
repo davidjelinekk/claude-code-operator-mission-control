@@ -21,7 +21,7 @@ function eventColor(eventType: string): string {
 function EventItem({ event, agentName, boardName }: { event: ActivityEvent; agentName: (id: string) => string; boardName: (id: string) => string }) {
   const color = eventColor(event.eventType)
   return (
-    <div className="flex gap-3 py-3 border-b border-[#21262d]">
+    <div className="flex gap-3 py-3 border-b border-border-subtle">
       <div className="flex-shrink-0 mt-1.5">
         <span
           className="block w-2 h-2 rounded-full"
@@ -37,17 +37,17 @@ function EventItem({ event, agentName, boardName }: { event: ActivityEvent; agen
             {event.eventType}
           </span>
           {event.agentId && (
-            <span className="text-[11px] font-mono text-[#6e7681]">{agentName(event.agentId)}</span>
+            <span className="text-[11px] font-mono text-text-tertiary">{agentName(event.agentId)}</span>
           )}
-          <span className="text-[11px] font-mono text-[#6e7681] ml-auto">{relativeTime(event.createdAt)}</span>
+          <span className="text-[11px] font-mono text-text-tertiary ml-auto">{relativeTime(event.createdAt)}</span>
         </div>
-        <p className="text-sm text-[#e6edf3] leading-snug">{event.message}</p>
+        <p className="text-sm text-text-primary leading-snug">{event.message}</p>
         {(event.boardId || event.taskId) && (
           <div className="flex gap-3 mt-1">
             {event.boardId && (
               <a
                 href={`/boards/${event.boardId}`}
-                className="text-[11px] font-mono text-[#58a6ff] hover:underline"
+                className="text-[11px] font-mono text-accent hover:underline"
               >
                 {boardName(event.boardId)}
               </a>
@@ -56,13 +56,13 @@ function EventItem({ event, agentName, boardName }: { event: ActivityEvent; agen
               <Link
                 to="/boards/$boardId"
                 params={{ boardId: event.boardId }}
-                className="text-[11px] font-mono text-[#58a6ff] hover:underline"
+                className="text-[11px] font-mono text-accent hover:underline"
               >
                 task:{event.taskId.slice(0, 8)}
               </Link>
             )}
             {event.taskId && !event.boardId && (
-              <span className="text-[11px] font-mono text-[#6e7681]">task:{event.taskId.slice(0, 8)}</span>
+              <span className="text-[11px] font-mono text-text-tertiary">task:{event.taskId.slice(0, 8)}</span>
             )}
           </div>
         )}
@@ -97,9 +97,9 @@ function ActivityPage() {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between border-b border-[#21262d] pb-4 mb-5">
-        <h1 className="font-mono text-[13px] font-semibold text-[#e6edf3] tracking-wide uppercase">
-          <span className="text-[#58a6ff]">~/</span>activity
+      <div className="flex items-center justify-between border-b border-border-subtle pb-4 mb-5">
+        <h1 className="font-mono text-[13px] font-semibold text-text-primary tracking-wide uppercase">
+          <span className="text-accent">~/</span>activity
         </h1>
         <div className="flex gap-1">
           {FILTERS.map(({ value, label }) => (
@@ -108,8 +108,8 @@ function ActivityPage() {
               onClick={() => setFilter(value)}
               className={`px-2.5 py-1 font-mono text-[11px] uppercase transition-colors border ${
                 filter === value
-                  ? 'text-[#58a6ff] border-[#58a6ff] bg-[#1f6feb22]'
-                  : 'text-[#6e7681] border-[#30363d] hover:text-[#8b949e] hover:border-[#6e7681]'
+                  ? 'text-accent border-accent bg-accent/[0.13]'
+                  : 'text-text-tertiary border-border hover:text-text-secondary hover:border-text-tertiary'
               }`}
             >
               {label}
@@ -119,15 +119,15 @@ function ActivityPage() {
       </div>
 
       {isLoading && (
-        <div className="text-center py-16 font-mono text-[#6e7681]">loading…</div>
+        <div className="text-center py-16 font-mono text-text-tertiary">loading…</div>
       )}
 
       {!isLoading && filtered.length === 0 && (
-        <div className="text-center py-16 font-mono text-[#6e7681]">[ ]</div>
+        <div className="text-center py-16 font-mono text-text-tertiary">[ ]</div>
       )}
 
       {!isLoading && filtered.length > 0 && (
-        <div className="border border-[#30363d] bg-[#161b22] px-4">
+        <div className="border border-border bg-surface px-4">
           {filtered.map((event) => (
             <EventItem key={event.id} event={event} agentName={agentName} boardName={boardName} />
           ))}

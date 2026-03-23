@@ -29,39 +29,22 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
+    <div className="min-h-screen bg-canvas flex items-center justify-center">
       <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <div className="flex flex-col items-center gap-1 mb-2">
-            {[
-              ' ██████  ██████      ██████  ██████  ███████ ██████   █████  ████████  ██████  ██████  ',
-              '██      ██          ██    ██ ██   ██ ██      ██   ██ ██   ██    ██    ██    ██ ██   ██ ',
-              '██      ██          ██    ██ ██████  █████   ██████  ███████    ██    ██    ██ ██████  ',
-              '██      ██          ██    ██ ██      ██      ██   ██ ██   ██    ██    ██    ██ ██  ██  ',
-              ' ██████  ██████      ██████  ██      ███████ ██   ██ ██   ██    ██     ██████  ██   ██ ',
-            ].map((line, i) => (
-              <span
-                key={i}
-                className="font-mono text-[#58a6ff] whitespace-pre select-none"
-                style={{
-                  fontSize: '6px',
-                  lineHeight: '1.3',
-                  textShadow: '0 0 20px rgba(88,166,255,0.4)',
-                }}
-              >
-                {line}
-              </span>
-            ))}
+        <div className="mb-10 text-center">
+          <div className="flex items-baseline justify-center gap-2 mb-3">
+            <span className="font-mono text-2xl font-bold text-accent tracking-tight">claude code</span>
+            <span className="font-mono text-2xl font-semibold text-text-primary tracking-tight">operator</span>
           </div>
-          <p className="text-[#6e7681] text-sm font-mono mt-3">operator access</p>
+          <p className="text-text-tertiary text-sm font-mono">operator access</p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-[#161b22] border border-[#21262d] rounded-lg p-6 flex flex-col gap-4"
+          className="bg-surface border border-border rounded-lg p-6 flex flex-col gap-4"
         >
           <div className="flex flex-col gap-1.5">
-            <label className="text-[#8b949e] text-xs font-mono uppercase tracking-wider">
+            <label className="text-text-secondary text-xs font-mono uppercase tracking-wider">
               username
             </label>
             <input
@@ -70,12 +53,12 @@ function LoginPage() {
               onChange={(e) => setUsername(e.target.value)}
               autoFocus
               autoComplete="username"
-              className="bg-[#0d1117] border border-[#30363d] rounded px-3 py-2 text-[#e6edf3] text-sm font-mono focus:outline-none focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff] transition-colors"
+              className="bg-canvas border border-border rounded px-3 py-2 text-text-primary text-sm font-mono focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-[#8b949e] text-xs font-mono uppercase tracking-wider">
+            <label className="text-text-secondary text-xs font-mono uppercase tracking-wider">
               password
             </label>
             <input
@@ -83,12 +66,12 @@ function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
-              className="bg-[#0d1117] border border-[#30363d] rounded px-3 py-2 text-[#e6edf3] text-sm font-mono focus:outline-none focus:border-[#58a6ff] focus:ring-1 focus:ring-[#58a6ff] transition-colors"
+              className="bg-canvas border border-border rounded px-3 py-2 text-text-primary text-sm font-mono focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors"
             />
           </div>
 
           {login.isError && (
-            <p className="text-[#f85149] text-xs font-mono">
+            <p className="text-error text-xs font-mono">
               Invalid username or password
             </p>
           )}
@@ -96,7 +79,7 @@ function LoginPage() {
           <button
             type="submit"
             disabled={login.isPending || !username || !password}
-            className="mt-1 bg-[#238636] hover:bg-[#2ea043] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-mono py-2 px-4 rounded transition-colors"
+            className="mt-1 bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-mono py-2.5 px-4 rounded transition-colors"
           >
             {login.isPending ? 'signing in...' : 'sign in'}
           </button>

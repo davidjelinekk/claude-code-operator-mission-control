@@ -3,39 +3,60 @@
 @tailwind utilities;
 
 @layer base {
+  /* ── Light Theme (default) ── */
   :root {
-    --background: 215 28% 7%;
-    --foreground: 210 17% 94%;
-    --card: 215 28% 9%;
-    --card-foreground: 210 17% 94%;
-    --popover: 215 28% 9%;
-    --popover-foreground: 210 17% 94%;
-    --primary: 212 100% 67%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 215 20% 13%;
-    --secondary-foreground: 210 17% 94%;
-    --muted: 215 20% 13%;
-    --muted-foreground: 215 9% 56%;
-    --accent: 215 20% 13%;
-    --accent-foreground: 210 17% 94%;
-    --destructive: 4 86% 63%;
-    --destructive-foreground: 210 17% 94%;
-    --border: 215 14% 20%;
-    --input: 215 14% 20%;
-    --ring: 212 100% 67%;
-    --radius: 0rem;
+    --color-canvas: 0 0% 100%;
+    --color-surface: 240 5% 96%;
+    --color-surface-hover: 240 5% 90%;
+    --color-sidebar: 240 5% 98%;
+    --color-border: 240 5% 90%;
+    --color-border-subtle: 240 5% 96%;
+    --color-border-strong: 240 5% 84%;
+    --color-text-primary: 240 6% 4%;
+    --color-text-secondary: 240 4% 36%;
+    --color-text-tertiary: 240 4% 46%;
+    --color-accent: 192 91% 36%;
+    --color-accent-hover: 192 83% 43%;
+    --color-accent-subtle: 192 91% 95%;
+    --color-success: 142 71% 35%;
+    --color-success-subtle: 142 71% 95%;
+    --color-warning: 48 96% 40%;
+    --color-warning-subtle: 48 96% 95%;
+    --color-error: 0 84% 51%;
+    --color-error-subtle: 0 84% 96%;
   }
-}
 
-@layer base {
+  /* ── Dark Theme ── */
+  .dark {
+    --color-canvas: 240 6% 4%;
+    --color-surface: 240 4% 10%;
+    --color-surface-hover: 240 4% 16%;
+    --color-sidebar: 240 6% 6%;
+    --color-border: 240 4% 16%;
+    --color-border-subtle: 240 4% 12%;
+    --color-border-strong: 240 4% 26%;
+    --color-text-primary: 0 0% 98%;
+    --color-text-secondary: 240 5% 65%;
+    --color-text-tertiary: 240 4% 46%;
+    --color-accent: 187 92% 43%;
+    --color-accent-hover: 187 94% 53%;
+    --color-accent-subtle: 187 92% 10%;
+    --color-success: 142 71% 45%;
+    --color-success-subtle: 142 71% 10%;
+    --color-warning: 48 96% 53%;
+    --color-warning-subtle: 48 96% 10%;
+    --color-error: 0 84% 60%;
+    --color-error-subtle: 0 84% 12%;
+  }
+
   * {
     box-sizing: border-box;
-    @apply border-[#30363d];
+    border-color: hsl(var(--color-border));
   }
 
   body {
-    background: #0d1117;
-    color: #e6edf3;
+    background: hsl(var(--color-canvas));
+    color: hsl(var(--color-text-primary));
     font-family: 'Inter', system-ui, sans-serif;
     font-size: 14px;
     line-height: 1.5;
@@ -43,29 +64,30 @@
   }
 
   ::selection {
-    background: rgba(88, 166, 255, 0.25);
-    color: #e6edf3;
+    background: hsl(var(--color-accent) / 0.2);
+    color: hsl(var(--color-text-primary));
   }
 
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #0d1117;
+    background: hsl(var(--color-canvas));
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #30363d;
+    background: hsl(var(--color-border));
+    border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #6e7681;
+    background: hsl(var(--color-text-tertiary));
   }
 
   *:focus-visible {
-    outline: 1px solid #58a6ff;
-    outline-offset: -1px;
+    outline: 2px solid hsl(var(--color-accent));
+    outline-offset: 2px;
   }
 }
