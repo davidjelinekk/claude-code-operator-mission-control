@@ -1,5 +1,0 @@
-[    7376ms] [ERROR] Access to fetch at 'http://localhost:3001/api/auth/login' from origin 'http://localhost:5174' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:5174/login:0
-[    7377ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:3001/api/auth/login:0
-[    8591ms] [ERROR] Access to fetch at 'http://localhost:3001/api/auth/login' from origin 'http://localhost:5174' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:5174/login:0
-[    8591ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:3001/api/auth/login:0
-[   38626ms] [ERROR] WebSocket connection to 'ws://localhost:5174/?token=VvdwekqEcAcR' failed:  @ http://localhost:5174/@vite/client:801

@@ -1,9 +1,0 @@
-[    1346ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:5173/api/v1/auth/me:0
-[    1349ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:5173/api/v1/clinics?is_active=true&page_size=100:0
-[    1388ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:5173/api/v1/auth/refresh:0
-[    1389ms] [WARNING] %c[WARN] Refresh token invalid - redirecting to login color: #FF9800 {component: API, action: refresh_token_invalid, correlationId: 03b7d9bb-8d7a-428e-a257-b4fe06017ff0} @ http://localhost:5173/src/lib/logger.ts:154
-[    1389ms] [WARNING] %c[WARN] Token refresh failed - redirecting to login color: #FF9800 {component: API, action: token_refresh_failed, correlationId: 0793b7f2-bc31-46f3-94f8-cbff7c9cfeb6} @ http://localhost:5173/src/lib/logger.ts:154
-[    2400ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:5173/api/v1/clinics?is_active=true&page_size=100:0
-[    2404ms] [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:5173/api/v1/auth/refresh:0
-[    2404ms] [WARNING] %c[WARN] Refresh token invalid - redirecting to login color: #FF9800 {component: API, action: refresh_token_invalid, correlationId: f6336168-a266-4373-a3e3-91874a591da3} @ http://localhost:5173/src/lib/logger.ts:154
-[    2404ms] [WARNING] %c[WARN] Token refresh failed - redirecting to login color: #FF9800 {component: API, action: token_refresh_failed, correlationId: 74dcd178-95f0-47b5-8984-1b00ca9747b4} @ http://localhost:5173/src/lib/logger.ts:154
