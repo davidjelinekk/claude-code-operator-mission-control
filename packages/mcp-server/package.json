@@ -1,0 +1,26 @@
+{
+  "name": "@cc-operator/mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for Claude Code Operator — manage boards, tasks, and agent sessions from any Claude Code session",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "cc-operator-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@claude-code-operator/tsconfig": "workspace:*",
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
