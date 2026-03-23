@@ -113,74 +113,41 @@ Orchestration Agent:
    Ad creative pending your approval."
 ```
 
-**Three layers:**
+**Two layers:**
 
 | Layer | What it does |
 |-------|-------------|
-| **MCP Server** | 14 tools that let Claude Code manage the Operator natively |
-| **Orchestration Agent** | Autonomous runner that processes board task queues |
-| **Platform** | Boards, tasks, governance, knowledge graph, analytics |
+| **Orchestration Agent** | Autonomous runner that uses the CLI to process boards |
+| **Platform** | API + Dashboard + Boards + Governance + Knowledge + Analytics |
 
 Claude Code handles execution (tools, channels, streaming). The Operator handles orchestration (what runs, when, governed how, tracked at what cost).
 
 ---
 
-## MCP Server — Primary Integration
-
-Add to your Claude Code settings (`~/.claude/settings.json`):
-
-```json
-{
-  "mcpServers": {
-    "operator": {
-      "command": "node",
-      "args": ["/path/to/claude-code-operator-mission-control/packages/mcp-server/dist/index.js"],
-      "env": {
-        "OPERATOR_URL": "http://localhost:3001",
-        "OPERATOR_TOKEN": "your-token"
-      }
-    }
-  }
-}
-```
-
-Then from any Claude Code session:
-
-```
-You: "What boards do I have?"
-Claude: [calls operator_list_boards] → "3 boards: Q2 Marketing, Dev Sprint, Compliance"
-
-You: "Spawn a research agent on the marketing board"
-Claude: [calls operator_spawn_agent] → "Agent running. Session ID: abc-123."
-
-You: "Any pending approvals?"
-Claude: [calls operator_list_approvals] → "1 pending: ad creative needs sign-off."
-```
-
-**14 MCP tools:** `operator_status`, `operator_list_boards`, `operator_create_board`, `operator_board_summary`, `operator_list_tasks`, `operator_create_task`, `operator_update_task`, `operator_task_queue`, `operator_spawn_agent`, `operator_list_sessions`, `operator_session_detail`, `operator_list_approvals`, `operator_resolve_approval`, `operator_analytics`
-
----
-
 ## Orchestration Agent
 
-The `operator-runner` agent autonomously processes board task queues:
+The `operator-runner` agent autonomously processes board task queues using the `cc-operator` CLI:
 
 ```bash
-# Install the agent (or run cc-operator init)
+# Install (or run cc-operator init)
 cp agents/operator-runner.md ~/.claude/agents/
+npm install -g cc-operator
+cc-operator init   # configure URL + token
 
 # Run a board
 claude --agent operator-runner --prompt "Process all tasks on board <id>"
 ```
 
-The agent:
-1. Polls the task queue (`respectDeps=true`)
-2. Claims the highest-priority unblocked task
-3. Spawns a governed worker agent (with context injection, tool governance, sandbox)
-4. Monitors until completion
-5. Marks task done, checks what's now unblocked
-6. Repeats until queue empty or budget reached
-7. Reports: tasks done, cost, pending approvals
+The agent uses CLI commands to:
+1. Check board status: `cc-operator board summary <id> --json`
+2. Find unblocked tasks and claim the highest-priority one
+3. Spawn a governed worker: `cc-operator spawn "do the work" --board <id> --task <id> --stream`
+4. Monitor until completion
+5. Mark task done, check what's now unblocked
+6. Repeat until queue empty or budget reached
+7. Report: tasks done, cost, pending approvals
+
+No MCP configuration. No settings files. Just the CLI.
 
 ---
 
@@ -301,9 +268,8 @@ Beyond explicit agent-to-agent messages, the system synthesizes **implicit dispa
 
 | Package | Purpose |
 |---------|---------|
-| `@cc-operator/mcp-server` | **Primary integration** — 14 MCP tools for Claude Code |
+| `cc-operator` | **CLI** — primary interface for managing boards, tasks, agents |
 | `@cc-operator/sdk` | TypeScript API client (19 resource classes, SSE streaming) |
-| `cc-operator` | CLI for terminal operations and automation |
 | `create-cc-operator` | Scaffolding — `npx create-cc-operator my-project` |
 
 ### Quick Install
@@ -324,7 +290,7 @@ npm install -g cc-operator            # Global CLI
 </p>
 
 ```
-cc-operator init          # Configure + install MCP server + orchestration agent
+cc-operator init          # Configure + install orchestration agent
 cc-operator status        # Health check
 cc-operator board list    # List boards
 cc-operator spawn "Fix the bug" --agent=debugger --stream
