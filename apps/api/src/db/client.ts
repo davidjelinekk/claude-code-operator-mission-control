@@ -8,7 +8,7 @@ const client = postgres(config.DATABASE_URL, {
   idle_timeout: 30,
   connect_timeout: 10,
   connection: {
-    statement_timeout: 30000,
+    statement_timeout: '30000' as unknown as number,
   },
 })
 export const db = drizzle(client, { schema })
