@@ -91,10 +91,10 @@ The analogy: **Kubernetes is to containers what CC Operator is to Claude Code se
 ## Why This Exists
 
 <p align="center">
-  <img src="docs/feature-competitive-gap.png" alt="The Competitive Gap" width="650" />
+  <img src="docs/feature-competitive-gap.png" alt="What Claude Code Operator Does" width="650" />
 </p>
 
-LangChain and CrewAI are SDKs for building agent pipelines. Claude Code Operator is an **operating system for running agent teams** — with persistent state, self-growing knowledge, governance policies, and a dashboard. It's the difference between writing code to orchestrate agents and having a platform that does it.
+Claude Code Operator is an **operating system for running AI agent teams** — with persistent state, self-growing knowledge, governance policies, and a dashboard. It's the difference between ad-hoc AI usage and managed AI operations.
 
 <p align="center">
   <img src="docs/feature-managed-platform.png" alt="Flat Files → Managed Platform" width="650" />
