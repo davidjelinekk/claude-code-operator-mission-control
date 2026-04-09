@@ -570,10 +570,15 @@ export const sessionArchives = pgTable(
     errorPatterns: jsonb('error_patterns').$type<string[]>().default([]),
     tokenCost: text('token_cost'),
     turnCount: integer('turn_count'),
+    /** SDK 0.2.91+: why the query loop terminated (completed, aborted_tools, max_turns, blocking_limit, etc.) */
+    terminalReason: text('terminal_reason'),
+    /** Which provider ran this session (claude, codex, gemini) */
+    provider: text('provider'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
     index('idx_session_archives_board').on(t.boardId, t.createdAt),
     index('idx_session_archives_agent').on(t.agentId, t.createdAt),
+    index('idx_session_archives_terminal_reason').on(t.terminalReason),
   ],
 )

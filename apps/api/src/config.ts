@@ -9,6 +9,8 @@ const EnvSchema = z.object({
   REDIS_URL: z.string().default('redis://127.0.0.1:6379/2'),
   CLAUDE_HOME: z.string().default(join(homedir(), '.claude')),
   ANTHROPIC_API_KEY: z.string().default(''),
+  OPENAI_API_KEY: z.string().default(''),
+  GOOGLE_API_KEY: z.string().default(''),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   EMBEDDING_PROVIDER: z.enum(['ollama']).default('ollama'),
   EMBEDDING_BASE_URL: z.string().default('http://localhost:11434'),

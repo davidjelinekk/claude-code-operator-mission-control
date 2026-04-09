@@ -55,6 +55,13 @@ function AgentCard({ agent }: { agent: Agent }) {
         {/* model info */}
         <div className="flex flex-col gap-1.5 border-t border-border-subtle pt-3">
           <div className="flex items-center justify-between gap-2">
+            <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">provider</span>
+            <span className="font-mono text-xs text-text-secondary">
+              {agent.provider ?? 'claude'}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
             <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">model</span>
             <span className="font-mono text-xs text-text-secondary truncate max-w-[60%] text-right">
               {agent.model ?? '—'}

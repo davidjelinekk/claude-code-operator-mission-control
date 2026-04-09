@@ -1,17 +1,24 @@
 import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { ArrowLeft, Loader2 } from 'lucide-react'
-import { useCreateAgent } from '@/hooks/api/agents'
+import { useCreateAgent, type Provider } from '@/hooks/api/agents'
 
 export const Route = createFileRoute('/agents/new')({
   component: AgentsNewPage,
 })
+
+const MODEL_PLACEHOLDERS: Record<Provider, string> = {
+  claude: 'claude-sonnet-4-6',
+  codex: 'o4-mini',
+  gemini: 'gemini-2.5-pro',
+}
 
 function AgentsNewPage() {
   const navigate = useNavigate()
   const createAgent = useCreateAgent()
 
   const [name, setName] = useState('')
+  const [provider, setProvider] = useState<Provider>('claude')
   const [model, setModel] = useState('')
   const [description, setDescription] = useState('')
 
@@ -21,6 +28,7 @@ function AgentsNewPage() {
     createAgent.mutate(
       {
         name: name.trim(),
+        provider,
         model: model.trim() || undefined,
         description: description.trim() || undefined,
       },
@@ -70,13 +78,27 @@ function AgentsNewPage() {
               />
             </div>
 
+            {/* Provider */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">provider</label>
+              <select
+                value={provider}
+                onChange={(e) => setProvider(e.target.value as Provider)}
+                className="bg-canvas border border-border focus:border-accent px-3 py-2 text-sm font-mono text-text-primary focus:outline-none w-full"
+              >
+                <option value="claude">Claude Code</option>
+                <option value="codex">OpenAI Codex</option>
+                <option value="gemini">Google Gemini</option>
+              </select>
+            </div>
+
             {/* Model */}
             <div className="flex flex-col gap-1.5">
               <label className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">model</label>
               <input
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                placeholder="claude-opus-4-5"
+                placeholder={MODEL_PLACEHOLDERS[provider]}
                 className="bg-canvas border border-border focus:border-accent px-3 py-2 text-sm font-mono text-text-primary focus:outline-none w-full"
               />
             </div>

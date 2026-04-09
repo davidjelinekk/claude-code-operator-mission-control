@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ProviderSchema } from './providers.js'
 
 export const AgentStatusSchema = z.enum(['available', 'running', 'offline', 'error'])
 export type AgentStatus = z.infer<typeof AgentStatusSchema>
@@ -8,6 +9,7 @@ export const AgentSchema = z.object({
   name: z.string(),
   description: z.string().nullable().optional(),
   model: z.string().nullable().optional(),
+  provider: ProviderSchema.nullable().optional(),
   tools: z.array(z.string()).optional(),
   maxTurns: z.number().int().nullable().optional(),
   permissionMode: z.string().nullable().optional(),

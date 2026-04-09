@@ -4,6 +4,7 @@ import type { Agent } from '../types.js'
 interface CreateAgentParams {
   name: string
   description?: string
+  provider?: 'claude' | 'codex' | 'gemini'
   model?: string
   tools?: string[]
   maxTurns?: number

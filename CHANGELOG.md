@@ -4,6 +4,48 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.1] - 2026-04-09
+
+### Added — Agent SDK 0.2.97 Upgrade
+
+- **`@anthropic-ai/claude-agent-sdk` bumped 0.2.81 → 0.2.97** (16 versions) — adopts new query methods, message types, and spawn options
+- **Live context usage** — new `GET /api/agent-sdk/sessions/:id/context-usage` returns a real-time context breakdown (system, tools, messages, free) from the SDK's `getContextUsage()` query method. Available only for running Claude sessions
+- **Subagent inspection** — new `GET /api/agent-sdk/sessions/:id/subagents` lists subagent IDs from the session transcript, and `GET /api/agent-sdk/sessions/:id/subagents/:agentId/messages` returns a subagent's full message history (powered by SDK `listSubagents()` / `getSubagentMessages()`)
+- **Terminal reason analytics** — result messages now carry `terminal_reason` (`completed` | `aborted_tools` | `aborted_streaming` | `max_turns` | `blocking_limit` | `rapid_refill_breaker` | `prompt_too_long` | `image_error` | `model_error` | `stop_hook_prevented` | `hook_stopped` | `tool_deferred`) for better session telemetry
+- **`taskBudget` spawn option** — new `SpawnParams.taskBudget: { total: number }` enables API-side token budget awareness for smoother pacing than reactive `maxBudgetUsd` cutoffs. Automatically applies the `task-budgets-2026-03-13` beta header
+- **`'auto'` PermissionMode** — added to the permission mode enum alongside existing modes
+- **Subagent attribution on hooks** — `PostToolUse` hooks now receive `agent_id` / `agent_type` so tool governance can track which subagent made each call
+- **`api_retry` system messages** — retry telemetry surfaced through normalized streaming
+- **Migration `9007_session_archives_terminal_reason.sql`** — adds `terminal_reason` and `provider` columns to the `session_archives` table
+
+### Fixed
+
+- **MCP child process cleanup** — upstream SDK fix, no more orphaned MCP server processes on session shutdown
+- **UTF-8 multibyte corruption** — upstream SDK fix for multibyte characters split across chunk boundaries in streaming output
+- **Parallel tool results** — upstream SDK fix for dropped results when multiple tools ran in parallel
+- **Error `is_error` correctness** — upstream SDK fix ensuring error results are correctly flagged
+
+### Changed
+
+- **Sandbox default preserved** — SDK 0.2.91 changed `sandbox.failIfUnavailable` to default `true`; `ClaudeProvider` now explicitly sets it to `false` to preserve graceful degradation when sandboxing is unavailable on the host
+
+## [0.5.0] - 2026-04-08
+
+### Added — Multi-Provider Orchestration
+
+- **Provider abstraction layer** (`services/providers/`) — pluggable architecture supporting Claude Code, OpenAI Codex CLI, and Google Gemini CLI via a common spawn/stream/abort interface
+- **`provider` field** on agents, spawn params, and sessions — defaults to `'claude'`, also accepts `'codex'` or `'gemini'`
+- **`GET /api/agent-sdk/providers`** — new endpoint returning per-provider availability and default models
+- **Provider selector** in web UI — agent creation form and orchestration spawn form include provider dropdown with provider-specific model options
+- **CLI `--provider` flag** — `cc-operator spawn` accepts `--provider claude|codex|gemini`
+- **Environment variables** — `OPENAI_API_KEY` and `GOOGLE_API_KEY` enable alternative providers
+- **Provider status** in orchestration dashboard — per-provider availability indicators with default model display
+- **NormalizedMessage** type — common message format across all providers for consistent streaming and archival
+
+### Fixed
+
+- **Session archival bug** — `pruneCompleted()` incorrectly used `callerContext` instead of `agentId` for archived session records
+
 ## [0.4.0] - 2026-03-23
 
 ### Added — Orchestration Layer

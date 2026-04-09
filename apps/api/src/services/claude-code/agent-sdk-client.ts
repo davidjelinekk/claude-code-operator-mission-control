@@ -1,5 +1,4 @@
 import { EventEmitter } from 'node:events'
-import { execSync } from 'node:child_process'
 import pino from 'pino'
 import {
   query,
@@ -9,21 +8,16 @@ import {
   renameSession as sdkRenameSession,
   tagSession as sdkTagSession,
   forkSession as sdkForkSession,
-  type SDKMessage,
-  type SDKResultMessage,
-  type Options,
-  type PermissionMode,
+  listSubagents as sdkListSubagents,
+  getSubagentMessages as sdkGetSubagentMessages,
   type SDKSessionInfo,
   type SessionMessage,
+  type PermissionMode,
 } from '@anthropic-ai/claude-agent-sdk'
-import { config } from '../../config.js'
-import { getAgent } from './agent-discovery.js'
+import type { Provider, NormalizedMessage, ProviderStatus } from '@claude-code-operator/shared-types'
+import type { ProviderSession } from '../providers/types.js'
+import { getProvider, detectAvailableProviders } from '../providers/registry.js'
 import { readMcpConfig, type McpServerConfig } from './config-reader.js'
-import { getScript } from './script-discovery.js'
-import { buildScriptMcpConfig } from './script-mcp-bridge.js'
-import { createToolGovernanceHandler, createToolLoggingHooks } from './tool-governance.js'
-import { retrieveContextWithTrace } from '../context-graph/context-retriever.js'
-import { buildContextPrompt } from '../context-graph/prompt-builder.js'
 import { extractFromText, compressSession } from '../context-graph/extractor.js'
 import { processExtractionResult } from '../context-graph/graph-store.js'
 import { db } from '../../db/client.js'
@@ -36,6 +30,8 @@ const log = pino({ name: 'agent-sdk' })
 
 export interface SpawnParams {
   prompt: string
+  /** Provider to use for this session (defaults to 'claude') */
+  provider?: Provider
   model?: string
   maxTurns?: number
   permissionMode?: PermissionMode
@@ -48,6 +44,12 @@ export interface SpawnParams {
   /** Inline agent definitions keyed by name */
   agents?: Record<string, { description: string; prompt: string; tools?: string[]; model?: string; maxTurns?: number }>
   maxBudgetUsd?: number
+  /**
+   * SDK 0.2.84+: API-side token budget awareness. The model sees its remaining
+   * budget and paces tool use to wrap up before hitting the limit.
+   * Sent as `output_config.task_budget` with the `task-budgets-2026-03-13` beta.
+   */
+  taskBudget?: { total: number }
   persistSession?: boolean
   /** Include streaming partial message events */
   includePartialMessages?: boolean
@@ -70,7 +72,7 @@ export interface SpawnParams {
   /** Environment variables to pass to the CLI subprocess */
   env?: Record<string, string | undefined>
   /** Sandbox settings for isolated execution */
-  sandbox?: boolean | { enabled: boolean; autoAllowBashIfSandboxed?: boolean; network?: { allowLocalBinding?: boolean; allowUnixSockets?: string[] } }
+  sandbox?: boolean | { enabled: boolean; failIfUnavailable?: boolean; autoAllowBashIfSandboxed?: boolean; network?: { allowLocalBinding?: boolean; allowUnixSockets?: string[] } }
   /** Inline settings to apply (permissions, model, etc.) */
   settings?: Record<string, unknown>
   /** Enable beta features (e.g., 'context-1m-2025-08-07' for 1M context) */
@@ -104,13 +106,18 @@ export type SessionStatus = 'running' | 'completed' | 'error' | 'aborted'
 
 export interface ManagedSession {
   sessionId: string
+  provider: Provider
   status: SessionStatus
-  messages: SDKMessage[]
-  result?: SDKResultMessage
+  messages: NormalizedMessage[]
+  result?: NormalizedMessage
+  providerSession: ProviderSession | null
+  /** @deprecated Use providerSession.queryHandle for Claude-specific access */
   query: ReturnType<typeof query> | null
   abortController: AbortController
   createdAt: Date
   completedAt?: Date
+  /** SDK 0.2.91+: terminal_reason from result message (Claude only) */
+  terminalReason?: string | null
   meta: { boardId?: string; taskId?: string; callerContext?: string; agentId?: string }
 }
 
@@ -120,13 +127,13 @@ export interface AgentSdkStatus {
   apiKeyConfigured: boolean
   model: string | null
   activeSessions: number
+  providers: ProviderStatus[]
 }
 
 // --- Session Manager ---
 
 class AgentSessionManager extends EventEmitter {
   private sessions = new Map<string, ManagedSession>()
-  private cliInstalled: boolean | null = null
   private pruneTimer: ReturnType<typeof setInterval> | null = null
 
   constructor() {
@@ -135,260 +142,57 @@ class AgentSessionManager extends EventEmitter {
   }
 
   checkCli(): boolean {
-    if (this.cliInstalled !== null) return this.cliInstalled
     try {
-      execSync('claude --version', { stdio: 'pipe', timeout: 5000 })
-      this.cliInstalled = true
+      return getProvider('claude').checkAvailable()
     } catch {
-      this.cliInstalled = false
+      return false
     }
-    return this.cliInstalled
   }
 
   getStatus(): AgentSdkStatus {
-    const cliInstalled = this.checkCli()
+    const providers = detectAvailableProviders()
+    const claudeStatus = providers.find((p) => p.provider === 'claude')
     return {
-      available: cliInstalled,
-      cliInstalled,
+      available: providers.some((p) => p.available),
+      cliInstalled: claudeStatus?.cliInstalled ?? false,
       apiKeyConfigured: !!process.env.ANTHROPIC_API_KEY,
-      model: cliInstalled ? 'claude-sonnet-4-6' : null,
+      model: claudeStatus?.defaultModel ?? null,
       activeSessions: this.getActiveSessions().length,
+      providers,
     }
   }
 
   async spawn(params: SpawnParams): Promise<{ sessionId: string; status: SessionStatus }> {
-    if (!this.checkCli()) {
-      throw new Error('Claude CLI not installed — orchestration mode unavailable')
+    const providerName = params.provider ?? 'claude'
+    const provider = getProvider(providerName)
+
+    if (!provider.checkAvailable()) {
+      throw new Error(`${providerName} CLI not available — check installation and API keys`)
     }
 
     const abortController = new AbortController()
 
-    const options: Options = {
+    const providerSession = await provider.spawn({
+      prompt: params.prompt,
+      model: params.model,
+      maxTurns: params.maxTurns,
+      cwd: params.cwd,
+      systemPrompt: params.systemPrompt,
+      env: params.env,
+      sandbox: params.sandbox,
       abortController,
-      permissionMode: params.permissionMode ?? 'plan',
-      persistSession: params.persistSession ?? false,
-      // Only pass required env vars — avoid leaking DB/Redis credentials to spawned agents
-      env: {
-        HOME: process.env.HOME,
-        PATH: process.env.PATH,
-        SHELL: process.env.SHELL,
-        USER: process.env.USER,
-        LANG: process.env.LANG,
-        TERM: process.env.TERM,
-        NODE_ENV: process.env.NODE_ENV,
-        ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
-        CLAUDE_AGENT_SDK_CLIENT_APP: 'claude-code-operator/1.0',
-        ...params.env,
-      },
-    }
-
-    // Core options
-    if (params.model) options.model = params.model
-    if (params.maxTurns) options.maxTurns = params.maxTurns
-    if (params.maxBudgetUsd) options.maxBudgetUsd = params.maxBudgetUsd
-    if (params.cwd) options.cwd = params.cwd
-    if (params.tools) options.tools = params.tools
-    if (params.disallowedTools) options.disallowedTools = params.disallowedTools
-    if (params.resume) options.resume = params.resume
-    if (params.sessionId) options.sessionId = params.sessionId
-    if (params.systemPrompt) options.systemPrompt = params.systemPrompt
-    if (params.additionalDirectories) options.additionalDirectories = params.additionalDirectories
-    if (params.fallbackModel) options.fallbackModel = params.fallbackModel
-    if (params.enableFileCheckpointing) options.enableFileCheckpointing = true
-    if (params.outputFormat) options.outputFormat = params.outputFormat
-
-    // Advanced capabilities
-    if (params.effort) options.effort = params.effort
-    if (params.includePartialMessages) options.includePartialMessages = true
-    if (params.agentProgressSummaries) options.agentProgressSummaries = true
-    if (params.promptSuggestions) options.promptSuggestions = true
-
-    // Sandbox mode
-    if (params.sandbox) {
-      if (typeof params.sandbox === 'boolean') {
-        options.sandbox = { enabled: params.sandbox, autoAllowBashIfSandboxed: true }
-      } else {
-        options.sandbox = params.sandbox
-      }
-    }
-
-    // Settings injection (permissions, model overrides, etc.)
-    if (params.settings) {
-      options.settings = params.settings as Options['settings']
-    }
-
-    // Beta features
-    if (params.betas && params.betas.length > 0) {
-      options.betas = params.betas as Options['betas']
-    }
-
-    // Setting sources
-    if (params.settingSources) {
-      options.settingSources = params.settingSources as Options['settingSources']
-    }
-
-    // Allowed tools (auto-approved without prompting)
-    if (params.allowedTools) {
-      options.allowedTools = params.allowedTools
-    }
-
-    // Thinking/reasoning behavior
-    if (params.thinking) options.thinking = params.thinking as Options['thinking']
-    if (params.resumeSessionAt) options.resumeSessionAt = params.resumeSessionAt
-    if (params.forkSession) options.forkSession = params.forkSession
-
-    // Debug logging
-    if (params.debug) options.debug = true
-    if (params.debugFile) options.debugFile = params.debugFile
-
-    // Plugins
-    if (params.plugins && params.plugins.length > 0) {
-      options.plugins = params.plugins as Options['plugins']
-    }
-
-    // Strict MCP config validation (always enabled)
-    options.strictMcpConfig = true
-
-    // Capture stderr for logging when debug is enabled
-    if (params.debug || params.debugFile) {
-      options.stderr = (data: string) => {
-        log.debug({ sessionId: 'pending', data: data.slice(0, 500) }, 'session stderr')
-      }
-    }
-
-    // Agent resolution: if an agent name is given, look up its definition from
-    // ~/.claude/agents/ and inject its config. The SDK's `agent` option expects
-    // the agent to be defined either in `options.agents` or in the user's settings.
-    if (params.agent) {
-      const agentDef = getAgent(params.agent)
-      if (agentDef) {
-        options.agent = agentDef.id
-        options.agents = {
-          ...params.agents,
-          [agentDef.id]: {
-            description: agentDef.description ?? agentDef.name,
-            prompt: agentDef.promptContent,
-            ...(agentDef.tools.length > 0 ? { tools: agentDef.tools } : {}),
-            ...(agentDef.model ? { model: agentDef.model } : {}),
-            ...(agentDef.maxTurns ? { maxTurns: agentDef.maxTurns } : {}),
-          },
-        }
-        // Apply agent-level overrides unless caller explicitly set them
-        if (!params.model && agentDef.model) options.model = agentDef.model
-        if (!params.maxTurns && agentDef.maxTurns) options.maxTurns = agentDef.maxTurns
-        if (!params.permissionMode && agentDef.permissionMode) {
-          options.permissionMode = agentDef.permissionMode as PermissionMode
-        }
-      } else {
-        // Agent not found locally — pass the name through, SDK will look in settings
-        options.agent = params.agent
-      }
-    } else if (params.agents) {
-      options.agents = params.agents
-    }
-
-    // MCP server injection
-    if (params.mcpServers && Object.keys(params.mcpServers).length > 0) {
-      options.mcpServers = params.mcpServers as Options['mcpServers']
-    }
-
-    // CLI script injection: resolve script IDs → build MCP server config → inject
-    if (params.scripts && params.scripts.length > 0) {
-      const resolvedScripts = params.scripts
-        .map((id) => getScript(id))
-        .filter((s): s is NonNullable<typeof s> => s !== null)
-
-      if (resolvedScripts.length > 0) {
-        const scriptMcpConfig = buildScriptMcpConfig(resolvedScripts)
-        if (scriptMcpConfig) {
-          options.mcpServers = {
-            ...options.mcpServers,
-            ...scriptMcpConfig,
-          } as Options['mcpServers']
-          log.info(
-            { scripts: resolvedScripts.map((s) => s.id) },
-            'injecting CLI scripts as MCP tools',
-          )
-        }
-      }
-    }
-
-    // Inject claude-mem MCP server into spawned sessions for observation capture
-    try {
-      const allMcpConfig = readMcpConfig()
-      if (allMcpConfig['mcp-search']) {
-        options.mcpServers = {
-          ...options.mcpServers,
-          'mcp-search': allMcpConfig['mcp-search'],
-        } as Options['mcpServers']
-      }
-    } catch {
-      // claude-mem not configured — fine
-    }
-
-    // Inject agent-bus MCP server for inter-agent communication
-    if (params.boardId) {
-      const busWrapperPath = new URL('./agent-bus-mcp.mjs', import.meta.url).pathname
-      options.mcpServers = {
-        ...options.mcpServers,
-        'agent-bus': {
-          command: 'node',
-          args: [busWrapperPath],
-          env: {
-            AGENT_BUS_API_URL: config.BASE_URL,
-            AGENT_BUS_AGENT_ID: params.agent ?? params.callerContext ?? 'anonymous',
-            AGENT_BUS_BOARD_ID: params.boardId,
-            AGENT_BUS_TOKEN: config.OPERATOR_TOKEN,
-          },
-        },
-      } as Options['mcpServers']
-    }
-
-    // Retrieve and inject contextual knowledge (context graph + session archives)
-    if (params.boardId || params.taskId) {
-      try {
-        const { blocks: contextBlocks, trace } = await retrieveContextWithTrace({
-          boardId: params.boardId,
-          taskId: params.taskId,
-          agentId: params.agent,
-          prompt: params.prompt,
-        })
-        if (contextBlocks.length > 0) {
-          const contextPrompt = buildContextPrompt(contextBlocks)
-          if (typeof options.systemPrompt === 'string') {
-            options.systemPrompt = contextPrompt + '\n\n' + options.systemPrompt
-          } else if (options.systemPrompt && typeof options.systemPrompt === 'object' && 'type' in options.systemPrompt && options.systemPrompt.type === 'preset') {
-            (options.systemPrompt as any).append = contextPrompt + '\n\n' + ((options.systemPrompt as any).append ?? '')
-          } else if (!options.systemPrompt) {
-            options.systemPrompt = contextPrompt
-          }
-          log.info(
-            { intent: trace.intent, blocks: trace.selectedBlocks, chars: trace.totalChars, reranked: trace.reranked, ms: trace.durationMs },
-            'context injected',
-          )
-        }
-      } catch (err) {
-        log.warn({ err }, 'context retrieval failed, continuing without context')
-      }
-    }
-
-    // Tool governance: attach canUseTool handler + PostToolUse logging hooks
-    if (params.boardId) {
-      options.canUseTool = createToolGovernanceHandler(params.boardId, params.agent)
-      // PostToolUse hooks log ALL tool calls (including allowedTools which bypass canUseTool)
-      const loggingHooks = createToolLoggingHooks(params.boardId, params.agent)
-      options.hooks = { ...options.hooks, ...loggingHooks }
-    }
-
-    const session = query({ prompt: params.prompt, options })
+      raw: params as unknown as Record<string, unknown>,
+    })
 
     const placeholderId = crypto.randomUUID()
 
     const managed: ManagedSession = {
       sessionId: placeholderId,
+      provider: providerName,
       status: 'running',
       messages: [],
-      query: session,
+      providerSession,
+      query: providerName === 'claude' ? (providerSession.queryHandle as ReturnType<typeof query>) : null,
       abortController,
       createdAt: new Date(),
       meta: {
@@ -400,16 +204,16 @@ class AgentSessionManager extends EventEmitter {
     }
 
     this.sessions.set(placeholderId, managed)
-    this.consumeSession(placeholderId, session)
+    this.consumeSession(placeholderId, providerSession.messages)
 
-    log.info({ sessionId: placeholderId, callerContext: params.callerContext, agent: params.agent }, 'session spawned')
+    log.info({ sessionId: placeholderId, provider: providerName, callerContext: params.callerContext, agent: params.agent }, 'session spawned')
 
     return { sessionId: placeholderId, status: 'running' }
   }
 
   private async consumeSession(
     id: string,
-    session: AsyncGenerator<SDKMessage, void>,
+    messages: AsyncGenerator<NormalizedMessage, void>,
   ) {
     const managed = this.sessions.get(id)
     if (!managed) return
@@ -417,14 +221,13 @@ class AgentSessionManager extends EventEmitter {
     let remapped = false
 
     try {
-      for await (const message of session) {
+      for await (const message of messages) {
         // If already aborted, don't process further messages
         if (managed.status === 'aborted') break
 
-        // Remap session ID from the first SDK message (once only)
+        // Remap session ID from the first message (once only)
         if (
           !remapped &&
-          'session_id' in message &&
           message.session_id &&
           message.session_id !== id
         ) {
@@ -440,27 +243,50 @@ class AgentSessionManager extends EventEmitter {
         managed.messages.push(message)
         this.emit('message', { sessionId: managed.sessionId, message })
 
+        // SDK 0.2.77+: api_retry system messages expose transient API retry telemetry.
+        // Shape (from SDKAPIRetryMessage):
+        //   { type:'system', subtype:'api_retry', attempt, max_retries, retry_delay_ms, error_status }
+        if (message.type === 'progress' && message.subtype === 'api_retry') {
+          const raw = (message.raw ?? {}) as Record<string, unknown>
+          log.warn(
+            {
+              sessionId: managed.sessionId,
+              provider: managed.provider,
+              attempt: raw.attempt,
+              maxRetries: raw.max_retries,
+              retryDelayMs: raw.retry_delay_ms,
+              errorStatus: raw.error_status,
+            },
+            'api retry',
+          )
+          this.emit('api-retry', { sessionId: managed.sessionId, detail: raw })
+        }
+
         if (message.type === 'result') {
           managed.result = message
           managed.status = message.is_error ? 'error' : 'completed'
           managed.completedAt = new Date()
+          managed.terminalReason = message.terminal_reason ?? null
+          managed.providerSession = null
           managed.query = null
           this.emit('done', { sessionId: managed.sessionId, result: message })
           log.info(
-            { sessionId: managed.sessionId, status: managed.status, turns: message.num_turns, cost: message.total_cost_usd },
+            {
+              sessionId: managed.sessionId,
+              provider: managed.provider,
+              status: managed.status,
+              terminalReason: managed.terminalReason,
+              turns: message.num_turns,
+              cost: message.total_cost_usd,
+            },
             'session completed',
           )
 
           // Extract knowledge + compress session output (non-blocking)
           if (!message.is_error) {
             const textContent = managed.messages
-              .filter((m) => m.type === 'assistant' && 'content' in m)
-              .map((m) =>
-                (m as any).content
-                  ?.filter?.((b: any) => b.type === 'text')
-                  ?.map((b: any) => b.text)
-                  ?.join('\n'),
-              )
+              .filter((m) => m.type === 'assistant' && m.content)
+              .map((m) => m.content)
               .filter(Boolean)
               .join('\n')
             if (textContent.length > 100) {
@@ -477,7 +303,7 @@ class AgentSessionManager extends EventEmitter {
                 })
                 .catch((err) => log.warn({ err }, 'session knowledge extraction failed'))
 
-              // Enhancement 2: Session compression → archive
+              // Session compression → archive
               compressSession(textContent)
                 .then((summary) => {
                   if (!summary) return
@@ -491,6 +317,8 @@ class AgentSessionManager extends EventEmitter {
                     errorPatterns: summary.errorPatterns,
                     tokenCost: message.total_cost_usd?.toString() ?? null,
                     turnCount: message.num_turns ?? null,
+                    terminalReason: message.terminal_reason ?? null,
+                    provider: managed.provider,
                   }).onConflictDoNothing()
                 })
                 .catch((err) => log.warn({ err }, 'session compression failed'))
@@ -505,6 +333,7 @@ class AgentSessionManager extends EventEmitter {
       if (managed.status === 'running') {
         managed.status = 'error'
         managed.completedAt = new Date()
+        managed.providerSession = null
         managed.query = null
         log.error({ sessionId: managed.sessionId, error: String(err) }, 'session error')
         this.emit('done', { sessionId: managed.sessionId, error: String(err) })
@@ -520,12 +349,13 @@ class AgentSessionManager extends EventEmitter {
     managed.status = 'aborted'
     managed.completedAt = new Date()
 
-    // Use Query.close() for proper subprocess + MCP transport cleanup
-    if (managed.query && typeof managed.query.close === 'function') {
-      managed.query.close()
+    // Use provider session's close for proper cleanup
+    if (managed.providerSession) {
+      managed.providerSession.close()
     } else {
       managed.abortController.abort()
     }
+    managed.providerSession = null
     managed.query = null
 
     log.info({ sessionId: managed.sessionId }, 'session aborted')
@@ -573,24 +403,17 @@ class AgentSessionManager extends EventEmitter {
         session.completedAt &&
         session.completedAt.getTime() < cutoff
       ) {
-        // Enhancement 2: Ensure session is archived before pruning
-        // (archiving happens at completion time; this is a safety net)
+        // Ensure session is archived before pruning (safety net)
         if (session.status === 'completed' && session.result && !session.result.is_error) {
-          // Check if already archived (avoid redundant Haiku call)
           db.select({ id: sessionArchives.id })
             .from(sessionArchives)
             .where(eq(sessionArchives.sessionId, session.sessionId))
             .limit(1)
             .then(([existing]) => {
-              if (existing) return // Already archived at completion time
+              if (existing) return
               const textContent = session.messages
-                .filter((m) => m.type === 'assistant' && 'content' in m)
-                .map((m) =>
-                  (m as any).content
-                    ?.filter?.((b: any) => b.type === 'text')
-                    ?.map((b: any) => b.text)
-                    ?.join('\n'),
-                )
+                .filter((m) => m.type === 'assistant' && m.content)
+                .map((m) => m.content)
                 .filter(Boolean)
                 .join('\n')
               if (textContent.length <= 100) return
@@ -599,13 +422,15 @@ class AgentSessionManager extends EventEmitter {
                 return db.insert(sessionArchives).values({
                   sessionId: session.sessionId,
                   boardId: session.meta.boardId ?? null,
-                  agentId: session.meta.callerContext ?? null,
+                  agentId: session.meta.agentId ?? null,
                   summary: summary.summary,
                   keyDecisions: summary.keyDecisions,
                   keyOutcomes: summary.keyOutcomes,
                   errorPatterns: summary.errorPatterns,
                   tokenCost: session.result?.total_cost_usd?.toString() ?? null,
                   turnCount: session.result?.num_turns ?? null,
+                  terminalReason: session.result?.terminal_reason ?? null,
+                  provider: session.provider,
                 }).onConflictDoNothing()
               })
             })
@@ -619,7 +444,7 @@ class AgentSessionManager extends EventEmitter {
     return pruned
   }
 
-  // --- SDK session management functions ---
+  // --- SDK session management functions (Claude-only) ---
 
   async listSdkSessions(options?: {
     dir?: string
@@ -667,17 +492,51 @@ class AgentSessionManager extends EventEmitter {
     return sdkForkSession(sessionId, options)
   }
 
+  /**
+   * SDK 0.2.89+: List subagent IDs that ran in a session.
+   * Reads from the session transcript file. Claude sessions only.
+   */
+  async listSessionSubagents(sessionId: string, dir?: string): Promise<string[]> {
+    try {
+      return await sdkListSubagents(sessionId, dir ? { dir } : undefined)
+    } catch {
+      return []
+    }
+  }
+
+  /**
+   * SDK 0.2.89+: Get messages for a specific subagent within a session.
+   * Reads from the session transcript file. Claude sessions only.
+   */
+  async getSessionSubagentMessages(
+    sessionId: string,
+    agentId: string,
+    options?: { dir?: string; limit?: number; offset?: number },
+  ): Promise<SessionMessage[]> {
+    try {
+      return await sdkGetSubagentMessages(sessionId, agentId, options)
+    } catch {
+      return []
+    }
+  }
+
   getMcpServersForSpawn(projectDir?: string): Record<string, McpServerConfig> {
     return readMcpConfig(projectDir)
   }
 
-  // --- Query control methods (for running sessions) ---
+  // --- Query control methods (Claude-only, require running session with query handle) ---
+
+  private getClaudeQuery(sessionId: string): ReturnType<typeof query> | null {
+    const managed = this.findSession(sessionId)
+    if (!managed || managed.status !== 'running' || managed.provider !== 'claude') return null
+    return managed.query
+  }
 
   async interruptSession(sessionId: string): Promise<boolean> {
-    const managed = this.findSession(sessionId)
-    if (!managed?.query || managed.status !== 'running') return false
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return false
     try {
-      await managed.query.interrupt()
+      await q.interrupt()
       return true
     } catch {
       return false
@@ -685,40 +544,55 @@ class AgentSessionManager extends EventEmitter {
   }
 
   async getSessionModels(sessionId: string): Promise<unknown[] | null> {
-    const managed = this.findSession(sessionId)
-    if (!managed?.query || managed.status !== 'running') return null
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return null
     try {
-      return await managed.query.supportedModels()
+      return await q.supportedModels()
     } catch {
       return null
     }
   }
 
   async getSessionMcpStatus(sessionId: string): Promise<unknown | null> {
-    const managed = this.findSession(sessionId)
-    if (!managed?.query || managed.status !== 'running') return null
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return null
     try {
-      return await managed.query.mcpServerStatus()
+      return await q.mcpServerStatus()
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * SDK 0.2.86+: Real-time context window usage breakdown by category
+   * (system prompt, tools, messages, MCP tools, memory files, etc.).
+   * Only works on running Claude sessions.
+   */
+  async getSessionContextUsage(sessionId: string): Promise<unknown | null> {
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return null
+    try {
+      return await q.getContextUsage()
     } catch {
       return null
     }
   }
 
   async getAccountInfo(sessionId: string): Promise<unknown | null> {
-    const managed = this.findSession(sessionId)
-    if (!managed?.query || managed.status !== 'running') return null
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return null
     try {
-      return await managed.query.accountInfo()
+      return await q.accountInfo()
     } catch {
       return null
     }
   }
 
   async setSessionModel(sessionId: string, model?: string): Promise<boolean> {
-    const managed = this.findSession(sessionId)
-    if (!managed?.query || managed.status !== 'running') return false
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return false
     try {
-      await managed.query.setModel(model)
+      await q.setModel(model)
       return true
     } catch {
       return false
@@ -726,10 +600,10 @@ class AgentSessionManager extends EventEmitter {
   }
 
   async setSessionPermissionMode(sessionId: string, mode: PermissionMode): Promise<boolean> {
-    const managed = this.findSession(sessionId)
-    if (!managed?.query || managed.status !== 'running') return false
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return false
     try {
-      await managed.query.setPermissionMode(mode)
+      await q.setPermissionMode(mode)
       return true
     } catch {
       return false
@@ -737,10 +611,10 @@ class AgentSessionManager extends EventEmitter {
   }
 
   async applySessionSettings(sessionId: string, settings: Record<string, unknown>): Promise<boolean> {
-    const managed = this.findSession(sessionId)
-    if (!managed?.query || managed.status !== 'running') return false
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return false
     try {
-      await managed.query.applyFlagSettings(settings as Parameters<typeof managed.query.applyFlagSettings>[0])
+      await q.applyFlagSettings(settings as Parameters<typeof q.applyFlagSettings>[0])
       return true
     } catch {
       return false
@@ -748,10 +622,10 @@ class AgentSessionManager extends EventEmitter {
   }
 
   async stopSessionTask(sessionId: string, taskId: string): Promise<boolean> {
-    const managed = this.findSession(sessionId)
-    if (!managed?.query || managed.status !== 'running') return false
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return false
     try {
-      await managed.query.stopTask(taskId)
+      await q.stopTask(taskId)
       return true
     } catch {
       return false
@@ -759,40 +633,40 @@ class AgentSessionManager extends EventEmitter {
   }
 
   async setSessionMcpServers(sessionId: string, servers: Record<string, unknown>): Promise<unknown> {
-    const managed = this.findSession(sessionId)
-    if (!managed?.query || managed.status !== 'running') return null
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return null
     try {
-      return await managed.query.setMcpServers(servers as Parameters<typeof managed.query.setMcpServers>[0])
+      return await q.setMcpServers(servers as Parameters<typeof q.setMcpServers>[0])
     } catch {
       return null
     }
   }
 
   async rewindSessionFiles(sessionId: string, userMessageId: string, dryRun?: boolean): Promise<unknown> {
-    const managed = this.findSession(sessionId)
-    if (!managed?.query || managed.status !== 'running') return null
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return null
     try {
-      return await managed.query.rewindFiles(userMessageId, dryRun ? { dryRun } : undefined)
+      return await q.rewindFiles(userMessageId, dryRun ? { dryRun } : undefined)
     } catch {
       return null
     }
   }
 
   async getSessionAgents(sessionId: string): Promise<unknown[] | null> {
-    const managed = this.findSession(sessionId)
-    if (!managed?.query || managed.status !== 'running') return null
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return null
     try {
-      return await managed.query.supportedAgents()
+      return await q.supportedAgents()
     } catch {
       return null
     }
   }
 
   async getSessionCommands(sessionId: string): Promise<unknown[] | null> {
-    const managed = this.findSession(sessionId)
-    if (!managed?.query || managed.status !== 'running') return null
+    const q = this.getClaudeQuery(sessionId)
+    if (!q) return null
     try {
-      return await managed.query.supportedCommands()
+      return await q.supportedCommands()
     } catch {
       return null
     }
@@ -835,6 +709,7 @@ export function getAgentSdkStatus(): AgentSdkStatus {
 
 export async function spawnAgentSession(params: {
   prompt: string
+  provider?: Provider
   model?: string
   maxTurns?: number
   permissionMode?: string

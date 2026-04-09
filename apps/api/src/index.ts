@@ -47,6 +47,10 @@ import { embeddingWorker } from './workers/embedding.js'
 import { extractionWorker } from './workers/extraction.js'
 import { claudeMemSyncWorker } from './workers/claude-mem-sync.js'
 import { sessionManager } from './services/claude-code/agent-sdk-client.js'
+import { registerProvider } from './services/providers/registry.js'
+import { ClaudeProvider } from './services/providers/claude-provider.js'
+import { CodexProvider } from './services/providers/codex-provider.js'
+import { GeminiProvider } from './services/providers/gemini-provider.js'
 import semanticSearchRouter from './routes/semantic-search.js'
 import contextGraphRouter from './routes/context-graph.js'
 
@@ -133,6 +137,11 @@ const boardWss = createBoardWsHandler()
 const flowWss = createFlowWsHandler()
 
 async function start(): Promise<void> {
+  // Register CLI providers
+  registerProvider(new ClaudeProvider())
+  registerProvider(new CodexProvider())
+  registerProvider(new GeminiProvider())
+
   await redis.connect()
   await redisSub.connect()
   await seedAdmin()

@@ -24,10 +24,12 @@ export interface SSEEvent {
 }
 
 export interface SpawnParams {
+  provider?: 'claude' | 'codex' | 'gemini'
   prompt: string
   model?: string
   maxTurns?: number
-  permissionMode?: 'default' | 'acceptEdits' | 'bypassPermissions' | 'plan' | 'dontAsk'
+  permissionMode?: 'default' | 'acceptEdits' | 'bypassPermissions' | 'plan' | 'dontAsk' | 'auto'
+  taskBudget?: { total: number }
   tools?: string[]
   disallowedTools?: string[]
   cwd?: string
@@ -45,7 +47,7 @@ export interface SpawnParams {
   enableFileCheckpointing?: boolean
   outputFormat?: { type: 'json_schema'; schema: Record<string, unknown> }
   scripts?: string[]
-  sandbox?: boolean | { enabled: boolean; autoAllowBashIfSandboxed?: boolean; network?: { allowLocalBinding?: boolean; allowUnixSockets?: string[] } }
+  sandbox?: boolean | { enabled: boolean; failIfUnavailable?: boolean; autoAllowBashIfSandboxed?: boolean; network?: { allowLocalBinding?: boolean; allowUnixSockets?: string[] } }
   settings?: Record<string, unknown>
   betas?: string[]
   settingSources?: Array<'user' | 'project' | 'local'>
@@ -64,7 +66,10 @@ export interface SpawnParams {
 
 export interface SessionSummary {
   sessionId: string
+  provider?: 'claude' | 'codex' | 'gemini'
   status: string
+  /** SDK 0.2.91+: why the query loop terminated (Claude only) */
+  terminalReason?: string | null
   createdAt: string
   completedAt: string | null
   meta: Record<string, unknown>

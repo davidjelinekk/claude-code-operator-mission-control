@@ -11,8 +11,11 @@ import {
   type SessionInfo,
   type SpawnParams,
   type StreamEvent,
+  type Provider,
 } from '@/hooks/api/orchestration'
 import { useScripts } from '@/hooks/api/scripts'
+import { ContextUsageBar } from '@/components/organisms/ContextUsageBar'
+import { SubagentViewer } from '@/components/organisms/SubagentViewer'
 
 export const Route = createFileRoute('/orchestration')({
   component: OrchestrationPage,
@@ -62,6 +65,24 @@ function OrchestrationPage() {
                 <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">active sessions</span>
                 <span className="font-mono text-xs text-accent">{status?.activeSessions ?? 0}</span>
               </div>
+              {status?.providers && status.providers.length > 0 && (
+                <div className="border-t border-border-subtle pt-2 mt-1">
+                  <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">providers</span>
+                  <div className="flex flex-col gap-1 mt-1.5">
+                    {status.providers.map((p) => (
+                      <div key={p.provider} className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-[11px] text-text-secondary">{p.provider}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`w-1.5 h-1.5 rounded-full ${p.available ? 'bg-success' : 'bg-text-tertiary'}`} />
+                          <span className={`font-mono text-[10px] ${p.available ? 'text-success' : 'text-text-tertiary'}`}>
+                            {p.available ? p.defaultModel ?? 'ready' : 'unavailable'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -81,6 +102,9 @@ function OrchestrationPage() {
       {viewingSessionId && (
         <SessionStreamViewer sessionId={viewingSessionId} onClose={() => setViewingSessionId(null)} />
       )}
+
+      {/* Subagent breakdown for the viewed session */}
+      {viewingSessionId && <SubagentViewer sessionId={viewingSessionId} />}
 
       {/* Historical Sessions */}
       <HistoricalSessionsTable
@@ -105,6 +129,7 @@ function StatusRow({ label, value, ok }: { label: string; value: string; ok?: bo
 
 function SpawnForm({ disabled }: { disabled: boolean }) {
   const spawn = useSpawnSession()
+  const [provider, setProvider] = useState<Provider>('claude')
   const [prompt, setPrompt] = useState('')
   const [model, setModel] = useState('')
   const [permissionMode, setPermissionMode] = useState<string>('plan')
@@ -122,6 +147,7 @@ function SpawnForm({ disabled }: { disabled: boolean }) {
     e.preventDefault()
     if (!prompt.trim()) return
     const params: SpawnParams = {
+      provider,
       prompt: prompt.trim(),
       model: model || undefined,
       permissionMode: (permissionMode || undefined) as SpawnParams['permissionMode'],
@@ -157,15 +183,45 @@ function SpawnForm({ disabled }: { disabled: boolean }) {
 
         <div className="grid grid-cols-2 gap-2">
           <select
+            value={provider}
+            onChange={(e) => { setProvider(e.target.value as Provider); setModel('') }}
+            className="bg-canvas border border-border text-text-secondary font-mono text-[11px] px-2 py-1.5 focus:border-accent focus:outline-none"
+            disabled={disabled}
+          >
+            <option value="claude">Claude Code</option>
+            <option value="codex">OpenAI Codex</option>
+            <option value="gemini">Google Gemini</option>
+          </select>
+
+          <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
             className="bg-canvas border border-border text-text-secondary font-mono text-[11px] px-2 py-1.5 focus:border-accent focus:outline-none"
             disabled={disabled}
           >
-            <option value="">default model</option>
-            <option value="claude-sonnet-4-6">sonnet 4.6</option>
-            <option value="claude-opus-4-6">opus 4.6</option>
-            <option value="claude-haiku-4-5">haiku 4.5</option>
+            {provider === 'claude' && (
+              <>
+                <option value="">default model</option>
+                <option value="claude-sonnet-4-6">sonnet 4.6</option>
+                <option value="claude-opus-4-6">opus 4.6</option>
+                <option value="claude-haiku-4-5">haiku 4.5</option>
+              </>
+            )}
+            {provider === 'codex' && (
+              <>
+                <option value="">default model</option>
+                <option value="o4-mini">o4-mini</option>
+                <option value="gpt-4.1">gpt-4.1</option>
+                <option value="o3">o3</option>
+              </>
+            )}
+            {provider === 'gemini' && (
+              <>
+                <option value="">default model</option>
+                <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+              </>
+            )}
           </select>
 
           <select
@@ -177,6 +233,8 @@ function SpawnForm({ disabled }: { disabled: boolean }) {
             <option value="plan">plan</option>
             <option value="default">default</option>
             <option value="acceptEdits">acceptEdits</option>
+            <option value="auto">auto</option>
+            <option value="bypassPermissions">bypassPermissions</option>
             <option value="dontAsk">dontAsk</option>
           </select>
 
@@ -338,19 +396,20 @@ function ActiveSessionsTable({
         </div>
       ) : (
         <div className="border-t border-border-subtle pt-3 flex flex-col gap-0">
-          <div className="grid grid-cols-[1fr_80px_80px_60px_80px_60px] gap-3 pb-1.5 mb-1 border-b border-border-subtle">
-            {['session', 'status', 'context', 'msgs', 'started', ''].map((h) => (
+          <div className="grid grid-cols-[1fr_60px_80px_80px_60px_80px_60px] gap-3 pb-1.5 mb-1 border-b border-border-subtle">
+            {['session', 'provider', 'status', 'context', 'msgs', 'started', ''].map((h) => (
               <span key={h} className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">{h}</span>
             ))}
           </div>
           {sessions.map((s, i) => (
             <div
               key={s.sessionId}
-              className={`grid grid-cols-[1fr_80px_80px_60px_80px_60px] gap-3 py-2 items-center ${i < sessions.length - 1 ? 'border-b border-border-subtle' : ''}`}
+              className={`grid grid-cols-[1fr_60px_80px_80px_60px_80px_60px] gap-3 py-2 items-center ${i < sessions.length - 1 ? 'border-b border-border-subtle' : ''}`}
             >
               <span className="font-mono text-xs text-text-primary truncate" title={s.sessionId}>
                 {s.sessionId.slice(0, 12)}...
               </span>
+              <span className="font-mono text-[10px] text-text-secondary">{s.provider ?? 'claude'}</span>
               <SessionStatusBadge status={s.status} />
               <span className="font-mono text-[10px] text-text-secondary truncate">
                 {s.meta.callerContext ?? '—'}
@@ -508,6 +567,11 @@ function SessionStreamViewer({ sessionId, onClose }: { sessionId: string; onClos
               {resultEvent.num_turns} turns
             </span>
           )}
+          {resultEvent?.terminal_reason && (
+            <span className="font-mono text-[10px] text-text-tertiary">
+              {resultEvent.terminal_reason}
+            </span>
+          )}
           <button
             onClick={onClose}
             className="font-mono text-[10px] text-text-secondary hover:text-text-primary border border-border px-2 py-0.5 transition-colors"
@@ -516,6 +580,9 @@ function SessionStreamViewer({ sessionId, onClose }: { sessionId: string; onClos
           </button>
         </div>
       </div>
+
+      {/* Live context usage (only while running, Claude-only) */}
+      {!done && <ContextUsageBar sessionId={sessionId} enabled={!done} />}
 
       <div ref={scrollRef} className="border-t border-border-subtle pt-3 max-h-96 overflow-y-auto">
         {events.length === 0 ? (

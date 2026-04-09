@@ -12,6 +12,7 @@ function buildAgentMd(params: {
   name: string
   description?: string
   model?: string
+  provider?: string
   tools?: string[]
   maxTurns?: number
   permissionMode?: string
@@ -20,6 +21,7 @@ function buildAgentMd(params: {
   const lines = ['---']
   lines.push(`name: ${params.name}`)
   if (params.description) lines.push(`description: ${params.description}`)
+  if (params.provider) lines.push(`provider: ${params.provider}`)
   if (params.model) lines.push(`model: ${params.model}`)
   if (params.tools?.length) lines.push(`tools: [${params.tools.join(', ')}]`)
   if (params.maxTurns) lines.push(`maxTurns: ${params.maxTurns}`)
@@ -37,6 +39,7 @@ agentsRouter.get('/', async (c) => {
     name: a.name,
     description: a.description,
     model: a.model,
+    provider: a.provider,
     tools: a.tools,
     maxTurns: a.maxTurns,
     permissionMode: a.permissionMode,
@@ -53,6 +56,7 @@ agentsRouter.get('/:id', async (c) => {
 agentsRouter.post('/', zValidator('json', z.object({
   name: z.string().min(1),
   description: z.string().optional(),
+  provider: z.enum(['claude', 'codex', 'gemini']).optional(),
   model: z.string().optional(),
   tools: z.array(z.string()).optional(),
   maxTurns: z.number().optional(),
@@ -72,6 +76,7 @@ agentsRouter.post('/', zValidator('json', z.object({
 agentsRouter.patch('/:id', zValidator('json', z.object({
   name: z.string().optional(),
   description: z.string().optional(),
+  provider: z.enum(['claude', 'codex', 'gemini']).optional(),
   model: z.string().optional(),
   tools: z.array(z.string()).optional(),
   maxTurns: z.number().optional(),
@@ -85,6 +90,7 @@ agentsRouter.patch('/:id', zValidator('json', z.object({
   const content = buildAgentMd({
     name: body.name ?? existing.name,
     description: body.description ?? existing.description ?? undefined,
+    provider: body.provider ?? existing.provider ?? undefined,
     model: body.model ?? existing.model ?? undefined,
     tools: body.tools ?? existing.tools,
     maxTurns: body.maxTurns ?? existing.maxTurns ?? undefined,

@@ -3,12 +3,22 @@ import { api } from '@/lib/api'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useAuthStore } from '@/store/auth'
 
+export type Provider = 'claude' | 'codex' | 'gemini'
+
+export interface ProviderStatus {
+  provider: Provider
+  available: boolean
+  cliInstalled: boolean
+  defaultModel: string | null
+}
+
 export interface OrchestrationStatus {
   available: boolean
   cliInstalled: boolean
   apiKeyConfigured: boolean
   model: string | null
   activeSessions: number
+  providers: ProviderStatus[]
 }
 
 export interface SessionInfo {
@@ -26,11 +36,14 @@ export interface SessionInfo {
 
 export interface ActiveSession {
   sessionId: string
+  provider?: Provider
   status: 'running' | 'completed' | 'error' | 'aborted'
   createdAt: string
   completedAt: string | null
   meta: { boardId?: string; taskId?: string; callerContext?: string }
   messageCount: number
+  /** SDK 0.2.91+: why the query loop terminated (Claude only) */
+  terminalReason?: string | null
 }
 
 export interface SessionsResponse {
@@ -39,10 +52,11 @@ export interface SessionsResponse {
 }
 
 export interface SpawnParams {
+  provider?: Provider
   prompt: string
   model?: string
   maxTurns?: number
-  permissionMode?: 'default' | 'acceptEdits' | 'bypassPermissions' | 'plan' | 'dontAsk'
+  permissionMode?: 'default' | 'acceptEdits' | 'bypassPermissions' | 'plan' | 'dontAsk' | 'auto'
   tools?: string[]
   disallowedTools?: string[]
   cwd?: string
@@ -50,13 +64,15 @@ export interface SpawnParams {
   agent?: string
   agents?: Record<string, { description: string; prompt: string; tools?: string[]; model?: string }>
   maxBudgetUsd?: number
+  /** SDK 0.2.84+: API-side token budget awareness */
+  taskBudget?: { total: number }
   persistSession?: boolean
   includePartialMessages?: boolean
   agentProgressSummaries?: boolean
   effort?: 'low' | 'medium' | 'high' | 'max'
   promptSuggestions?: boolean
   scripts?: string[]
-  sandbox?: boolean | { enabled: boolean; autoAllowBashIfSandboxed?: boolean }
+  sandbox?: boolean | { enabled: boolean; failIfUnavailable?: boolean; autoAllowBashIfSandboxed?: boolean }
   settings?: Record<string, unknown>
   betas?: string[]
   allowedTools?: string[]
@@ -168,6 +184,7 @@ export function useRewindSessionFiles() {
 
 export interface StreamEvent {
   type: string
+  provider?: Provider
   session_id?: string
   uuid?: string
   content?: string
@@ -175,6 +192,8 @@ export interface StreamEvent {
   is_error?: boolean
   total_cost_usd?: number
   num_turns?: number
+  /** SDK 0.2.91+: why the query loop terminated (Claude only) */
+  terminal_reason?: string | null
   result?: string
   errors?: string[]
   status?: string
@@ -247,5 +266,39 @@ export function useMcpServers(projectDir?: string) {
     queryKey: ['orchestration', 'mcp-servers', projectDir],
     queryFn: () => api.get(`api/agent-sdk/mcp-servers${params}`).json(),
     staleTime: 60_000,
+  })
+}
+
+// SDK 0.2.86+: real-time context window usage
+export function useContextUsage(sessionId: string | null) {
+  return useQuery<{
+    categories: Array<{ name: string; tokens: number; color?: string; isDeferred?: boolean }>
+    totalTokens: number
+    maxTokens?: number
+    rawMaxTokens?: number
+    percentage?: number
+  }>({
+    queryKey: ['orchestration', 'context-usage', sessionId],
+    queryFn: () => api.get(`api/agent-sdk/sessions/${sessionId}/context-usage`).json(),
+    enabled: !!sessionId,
+    refetchInterval: 5000,
+  })
+}
+
+// SDK 0.2.89+: list subagent IDs from a session
+export function useSessionSubagents(sessionId: string | null) {
+  return useQuery<string[]>({
+    queryKey: ['orchestration', 'subagents', sessionId],
+    queryFn: () => api.get(`api/agent-sdk/sessions/${sessionId}/subagents`).json(),
+    enabled: !!sessionId,
+  })
+}
+
+// SDK 0.2.89+: get messages for a specific subagent
+export function useSubagentMessages(sessionId: string | null, agentId: string | null) {
+  return useQuery<Array<Record<string, unknown>>>({
+    queryKey: ['orchestration', 'subagent-messages', sessionId, agentId],
+    queryFn: () => api.get(`api/agent-sdk/sessions/${sessionId}/subagents/${encodeURIComponent(agentId!)}/messages`).json(),
+    enabled: !!sessionId && !!agentId,
   })
 }

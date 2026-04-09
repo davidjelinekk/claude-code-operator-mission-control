@@ -22,6 +22,9 @@ export function generateEnv(projectDir: string, overrides: Record<string, string
       'EMBEDDING_PROVIDER=ollama',
       'EMBEDDING_BASE_URL=http://localhost:11434',
       'EMBEDDING_MODEL=nomic-embed-text',
+      '# Multi-provider support (optional)',
+      'OPENAI_API_KEY=',
+      'GOOGLE_API_KEY=',
     ].join('\n') + '\n'
   }
 

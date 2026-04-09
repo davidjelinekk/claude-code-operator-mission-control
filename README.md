@@ -294,7 +294,40 @@ cc-operator init          # Configure + install orchestration agent
 cc-operator status        # Health check
 cc-operator board list    # List boards
 cc-operator spawn "Fix the bug" --agent=debugger --stream
+cc-operator spawn "Refactor auth" --provider codex --model o4-mini --stream
+cc-operator spawn "Add tests" --provider gemini --model gemini-2.5-pro --stream
 ```
+
+### Multi-Provider Orchestration
+
+Spawn sessions with Claude Code (default), OpenAI Codex CLI, or Google Gemini CLI:
+
+```bash
+# Via CLI
+cc-operator spawn "analyze the data" --provider gemini --stream
+
+# Via API
+curl -X POST http://localhost:3001/api/agent-sdk/spawn \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"fix the bug","provider":"codex","model":"o4-mini"}'
+
+# Check available providers
+curl http://localhost:3001/api/agent-sdk/providers \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Agents can be configured with a default provider in their `.md` frontmatter:
+
+```yaml
+---
+name: codex-worker
+provider: codex
+model: o4-mini
+---
+```
+
+Set `OPENAI_API_KEY` and/or `GOOGLE_API_KEY` in your `.env` to enable non-Claude providers.
 
 ---
 
@@ -512,6 +545,9 @@ To spawn Agent SDK sessions from the dashboard:
 | `/api/agent-sdk/sessions/:id/fork` | POST | Fork session |
 | `/api/agent-sdk/sessions/:id/mcp-status` | GET | MCP server status |
 | `/api/agent-sdk/sessions/:id/account-info` | GET | Account info |
+| `/api/agent-sdk/sessions/:id/context-usage` | GET | Live context window breakdown (running Claude sessions only) |
+| `/api/agent-sdk/sessions/:id/subagents` | GET | List subagent IDs from session transcript |
+| `/api/agent-sdk/sessions/:id/subagents/:agentId/messages` | GET | Subagent message history |
 | `/api/agent-sdk/mcp-servers` | GET | Available MCP servers |
 
 ### Scripts
@@ -890,7 +926,9 @@ Open **Scripts** in the dashboard, click **Refresh**, and test it.
 | `DATABASE_URL` | `postgresql://localhost:5432/cc_operator` | PostgreSQL connection |
 | `REDIS_URL` | `redis://127.0.0.1:6379/2` | Redis connection |
 | `CLAUDE_HOME` | `~/.claude` | Claude Code config directory |
-| `ANTHROPIC_API_KEY` | (optional) | Enables orchestration + context graph extraction |
+| `ANTHROPIC_API_KEY` | (optional) | Enables Claude provider + context graph extraction |
+| `OPENAI_API_KEY` | (optional) | Enables OpenAI Codex provider (o4-mini, gpt-4.1) |
+| `GOOGLE_API_KEY` | (optional) | Enables Google Gemini provider (gemini-2.5-pro) |
 | `EMBEDDING_PROVIDER` | `ollama` | Embedding provider |
 | `EMBEDDING_BASE_URL` | `http://localhost:11434` | Ollama server URL |
 | `EMBEDDING_MODEL` | `nomic-embed-text` | Embedding model (768-dim) |

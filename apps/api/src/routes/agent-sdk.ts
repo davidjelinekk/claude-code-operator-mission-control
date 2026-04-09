@@ -1,11 +1,13 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
+import type { NormalizedMessage } from '@claude-code-operator/shared-types'
 import {
   sessionManager,
   getAgentSdkStatus,
   type SDKSessionInfo,
 } from '../services/claude-code/agent-sdk-client.js'
+import { detectAvailableProviders } from '../services/providers/registry.js'
 import { listSessions } from '../services/claude-code/session-parser.js'
 import { getSessionUser, safeTokenMatch } from '../lib/auth.js'
 import { config } from '../config.js'
@@ -37,16 +39,25 @@ agentSdkRouter.get('/status', async (c) => {
   return c.json(status)
 })
 
+// --- GET /providers ---
+agentSdkRouter.get('/providers', async (c) => {
+  return c.json(detectAvailableProviders())
+})
+
 // --- POST /spawn ---
 agentSdkRouter.post(
   '/spawn',
   zValidator(
     'json',
     z.object({
+      provider: z.enum(['claude', 'codex', 'gemini']).optional(),
       prompt: z.string().min(1),
       model: z.string().optional(),
       maxTurns: z.number().optional(),
-      permissionMode: z.enum(['default', 'acceptEdits', 'bypassPermissions', 'plan', 'dontAsk']).optional(),
+      permissionMode: z.enum(['default', 'acceptEdits', 'bypassPermissions', 'plan', 'dontAsk', 'auto']).optional(),
+      taskBudget: z.object({
+        total: z.number(),
+      }).optional(),
       tools: z.array(z.string()).optional(),
       disallowedTools: z.array(z.string()).optional(),
       cwd: z.string().optional(),
@@ -83,6 +94,7 @@ agentSdkRouter.post(
         z.boolean(),
         z.object({
           enabled: z.boolean(),
+          failIfUnavailable: z.boolean().optional(),
           autoAllowBashIfSandboxed: z.boolean().optional(),
           network: z.object({
             allowLocalBinding: z.boolean().optional(),
@@ -129,11 +141,13 @@ agentSdkRouter.get('/sessions', async (c) => {
   // Return all in-memory sessions (active + recently completed/errored/aborted)
   const active = sessionManager.getAllSessions().map((s) => ({
     sessionId: s.sessionId,
+    provider: s.provider,
     status: s.status,
     createdAt: s.createdAt.toISOString(),
     completedAt: s.completedAt?.toISOString() ?? null,
     meta: s.meta,
     messageCount: s.messages.length,
+    terminalReason: s.terminalReason ?? null,
   }))
 
   // Use SDK's richer session listing when available, fall back to our parser
@@ -156,19 +170,19 @@ agentSdkRouter.get('/sessions/:id', async (c) => {
   if (session) {
     return c.json({
       sessionId: session.sessionId,
+      provider: session.provider,
       status: session.status,
       createdAt: session.createdAt.toISOString(),
       completedAt: session.completedAt?.toISOString() ?? null,
       meta: session.meta,
       messageCount: session.messages.length,
+      terminalReason: session.terminalReason ?? null,
       messages: session.messages.map((m) => ({
         type: m.type,
-        ...('session_id' in m ? { session_id: m.session_id } : {}),
-        ...('uuid' in m ? { uuid: m.uuid } : {}),
-        // Include text content for assistant messages
-        ...('message' in m && m.type === 'assistant'
-          ? { content: extractTextContent(m) }
-          : {}),
+        provider: m.provider,
+        ...(m.session_id ? { session_id: m.session_id } : {}),
+        ...(m.uuid ? { uuid: m.uuid } : {}),
+        ...(m.type === 'assistant' && m.content ? { content: m.content } : {}),
       })),
       result: formatResult(session.result),
     })
@@ -236,7 +250,7 @@ agentSdkRouter.get('/sessions/:id/stream', async (c) => {
       // consumeSession async loop can't interleave, no duplicates are possible.
       // The listener only fires for messages arriving AFTER replay completes.
 
-      const onMessage = (data: { sessionId: string; message: SDKMessage }) => {
+      const onMessage = (data: { sessionId: string; message: NormalizedMessage }) => {
         if (closed || data.sessionId !== session.sessionId) return
         controller.enqueue(
           encode(`event: message\ndata: ${JSON.stringify(formatStreamMessage(data.message))}\n\n`),
@@ -325,7 +339,7 @@ agentSdkRouter.post(
 // --- POST /sessions/:id/set-permission-mode ---
 agentSdkRouter.post(
   '/sessions/:id/set-permission-mode',
-  zValidator('json', z.object({ mode: z.enum(['default', 'acceptEdits', 'bypassPermissions', 'plan', 'dontAsk']) })),
+  zValidator('json', z.object({ mode: z.enum(['default', 'acceptEdits', 'bypassPermissions', 'plan', 'dontAsk', 'auto']) })),
   async (c) => {
     const id = c.req.param('id')
     const { mode } = c.req.valid('json')
@@ -420,6 +434,42 @@ agentSdkRouter.get('/sessions/:id/mcp-status', async (c) => {
   return c.json(status)
 })
 
+// --- GET /sessions/:id/context-usage (running Claude sessions only) ---
+// SDK 0.2.86+: Real-time context window breakdown by category
+agentSdkRouter.get('/sessions/:id/context-usage', async (c) => {
+  const id = c.req.param('id')
+  const usage = await sessionManager.getSessionContextUsage(id)
+  if (usage === null) {
+    return c.json({ error: 'Session not found, not running, or not a Claude session' }, 404)
+  }
+  return c.json(usage)
+})
+
+// --- GET /sessions/:id/subagents ---
+// SDK 0.2.89+: List subagent IDs from a Claude session transcript
+agentSdkRouter.get('/sessions/:id/subagents', async (c) => {
+  const id = c.req.param('id')
+  const dir = c.req.query('dir')
+  const agents = await sessionManager.listSessionSubagents(id, dir)
+  return c.json(agents)
+})
+
+// --- GET /sessions/:id/subagents/:agentId/messages ---
+// SDK 0.2.89+: Get messages for a specific subagent
+agentSdkRouter.get('/sessions/:id/subagents/:agentId/messages', async (c) => {
+  const id = c.req.param('id')
+  const agentId = c.req.param('agentId')
+  const dir = c.req.query('dir')
+  const limit = c.req.query('limit') ? Number(c.req.query('limit')) : undefined
+  const offset = c.req.query('offset') ? Number(c.req.query('offset')) : undefined
+  const messages = await sessionManager.getSessionSubagentMessages(id, agentId, {
+    dir,
+    limit,
+    offset,
+  })
+  return c.json(messages)
+})
+
 // --- GET /sessions/:id/account-info (running sessions only) ---
 agentSdkRouter.get('/sessions/:id/account-info', async (c) => {
   const id = c.req.param('id')
@@ -482,76 +532,40 @@ agentSdkRouter.get('/mcp-servers', async (c) => {
 
 // --- Helpers ---
 
-type SDKMessage = import('../services/claude-code/agent-sdk-client.js').ManagedSession['messages'][number]
+function formatStreamMessage(msg: NormalizedMessage): Record<string, unknown> {
+  const base: Record<string, unknown> = { type: msg.type, provider: msg.provider }
+  if (msg.session_id) base.session_id = msg.session_id
+  if (msg.uuid) base.uuid = msg.uuid
 
-function formatStreamMessage(msg: SDKMessage): Record<string, unknown> {
-  const base: Record<string, unknown> = { type: msg.type }
-  if ('session_id' in msg) base.session_id = msg.session_id
-  if ('uuid' in msg) base.uuid = msg.uuid
-
-  // Include richer data for assistant messages
-  if (msg.type === 'assistant') {
-    base.content = extractTextContent(msg)
+  if (msg.type === 'assistant' && msg.content) {
+    base.content = msg.content
   }
 
-  // Include result details
   if (msg.type === 'result') {
-    const r = msg as SDKMessage & { subtype?: string; is_error?: boolean; total_cost_usd?: number; num_turns?: number; result?: string; errors?: string[] }
-    base.subtype = r.subtype
-    base.is_error = r.is_error
-    base.total_cost_usd = r.total_cost_usd
-    base.num_turns = r.num_turns
-    if ('result' in r) base.result = r.result
-    if ('errors' in r) base.errors = r.errors
+    base.subtype = msg.subtype
+    base.is_error = msg.is_error
+    base.total_cost_usd = msg.total_cost_usd
+    base.num_turns = msg.num_turns
+    if (msg.terminal_reason != null) base.terminal_reason = msg.terminal_reason
   }
 
-  // Include progress info for system messages
-  if (msg.type === 'system' && 'subtype' in msg) {
-    base.subtype = (msg as Record<string, unknown>).subtype
-  }
-
-  // Include tool use summaries
-  if ('type' in msg && (msg.type as string) === 'tool_use_summary') {
-    const t = msg as Record<string, unknown>
-    base.tool_name = t.tool_name
-    base.tool_use_id = t.tool_use_id
-  }
-
-  // Include task notifications (subagent progress)
-  if ('type' in msg && (msg.type as string).startsWith('task_')) {
-    const t = msg as Record<string, unknown>
-    if (t.task_id) base.task_id = t.task_id
-    if (t.status) base.status = t.status
-    if (t.summary) base.summary = t.summary
+  if (msg.type === 'progress' && msg.subtype) {
+    base.subtype = msg.subtype
   }
 
   return base
 }
 
-function extractTextContent(msg: unknown): string | undefined {
-  const m = msg as { message?: { content?: Array<{ type: string; text?: string }> | string } }
-  if (!m.message?.content) return undefined
-  if (typeof m.message.content === 'string') return m.message.content
-  if (Array.isArray(m.message.content)) {
-    return m.message.content
-      .filter((b) => b.type === 'text' && b.text)
-      .map((b) => b.text)
-      .join('\n')
-  }
-  return undefined
-}
-
-function formatResult(result?: { type: string; subtype: string; is_error: boolean; duration_ms: number; num_turns: number; total_cost_usd: number } & Record<string, unknown>) {
+function formatResult(result?: NormalizedMessage) {
   if (!result) return null
   return {
     type: result.type,
+    provider: result.provider,
     subtype: result.subtype,
     is_error: result.is_error,
-    duration_ms: result.duration_ms,
     num_turns: result.num_turns,
     total_cost_usd: result.total_cost_usd,
-    ...('result' in result ? { result: result.result } : {}),
-    ...('errors' in result ? { errors: result.errors } : {}),
+    terminal_reason: result.terminal_reason ?? null,
   }
 }
 

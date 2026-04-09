@@ -3,6 +3,7 @@
 ## Monorepo Structure
 
 - `apps/api/` — Hono API server (Node 22+, PostgreSQL, Redis)
+- `apps/api/src/services/providers/` — Multi-CLI provider abstraction (Claude, Codex, Gemini)
 - `apps/web/` — React 19 SPA (TanStack Router, TanStack Query, Tailwind, Vite)
 - `packages/shared-types/` — Zod schemas shared between API and web
 - `packages/tsconfig/` — Shared TypeScript configs
@@ -21,6 +22,7 @@
 - Hono for API routes, Drizzle ORM for database, Zod for validation
 - API routes: one file per domain in `apps/api/src/routes/`
 - Shared types go in `packages/shared-types/src/`
+- Requires `@anthropic-ai/claude-agent-sdk` >= 0.2.97 (context usage, subagent inspection, `taskBudget`, `terminal_reason`)
 
 ## Database
 

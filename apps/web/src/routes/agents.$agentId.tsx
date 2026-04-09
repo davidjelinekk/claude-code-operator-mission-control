@@ -315,6 +315,12 @@ function AgentDetailPage() {
               savedOk={patch.isSuccess && lastSavedField === 'description'}
             />
             <div className="flex items-center justify-between gap-2">
+              <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">provider</span>
+              <span className="font-mono text-xs text-text-secondary">
+                {agent.provider ?? 'claude'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
               <span className="font-mono text-[10px] text-text-tertiary uppercase tracking-widest">model</span>
               <span className="font-mono text-xs text-text-secondary truncate max-w-[200px] text-right">
                 {agent.model ?? '—'}

@@ -83,20 +83,34 @@ export function createToolGovernanceHandler(boardId: string, agentId?: string): 
 /**
  * Creates PostToolUse hooks that log ALL tool executions (including allowedTools).
  * This fires for every tool call regardless of permission mode.
+ *
+ * SDK 0.2.69+: The hook input includes `agent_id` and `agent_type` fields,
+ * allowing attribution of tool calls to the specific subagent that issued them.
  */
 export function createToolLoggingHooks(boardId: string, agentId?: string): Options['hooks'] {
   return {
     PostToolUse: [{
       hooks: [async (input) => {
-        const toolName = (input as Record<string, unknown>).tool_name as string ?? 'unknown'
-        const toolInput = (input as Record<string, unknown>).tool_input as Record<string, unknown> ?? {}
+        const raw = input as Record<string, unknown>
+        const toolName = (raw.tool_name as string) ?? 'unknown'
+        const toolInput = (raw.tool_input as Record<string, unknown>) ?? {}
+        // SDK 0.2.69+: attribution fields — which subagent triggered this call
+        const hookAgentId = (raw.agent_id as string | undefined) ?? null
+        const hookAgentType = (raw.agent_type as string | undefined) ?? null
+        // Prefer hook-provided agent_id (specific subagent) over the main session agentId
+        const effectiveAgentId = hookAgentId ?? agentId ?? null
 
         db.insert(activityEvents).values({
           boardId,
-          agentId: agentId ?? null,
+          agentId: effectiveAgentId,
           eventType: 'tool.used',
           message: `Tool: ${toolName}`,
-          metadata: { toolName, inputSummary: summarizeInput(toolInput) },
+          metadata: {
+            toolName,
+            inputSummary: summarizeInput(toolInput),
+            agentId: hookAgentId,
+            agentType: hookAgentType,
+          },
         }).catch((err) => log.warn({ err }, 'failed to log tool use via hook'))
 
         return {}

@@ -29,6 +29,14 @@ psql $DATABASE_URL -f apps/api/src/db/migrations/9001_pgvector_embeddings.sql
 psql $DATABASE_URL -f apps/api/src/db/migrations/9002_context_graph.sql
 psql $DATABASE_URL -f apps/api/src/db/migrations/9003_session_archives.sql
 psql $DATABASE_URL -f apps/api/src/db/migrations/9004_agent_messages.sql
+psql $DATABASE_URL -f apps/api/src/db/migrations/9005_vector_hnsw_index.sql
+psql $DATABASE_URL -f apps/api/src/db/migrations/9006_add_missing_indexes.sql
+psql $DATABASE_URL -f apps/api/src/db/migrations/9007_session_archives_terminal_reason.sql
+
+# Optional: Multi-provider support (for testing with non-Claude CLIs)
+# Add to apps/api/.env:
+#   OPENAI_API_KEY=sk-...    # enables Codex provider
+#   GOOGLE_API_KEY=AI...     # enables Gemini provider
 
 # Start dev servers
 pnpm dev

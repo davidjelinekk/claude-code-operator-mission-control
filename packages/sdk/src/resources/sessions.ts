@@ -41,6 +41,10 @@ export class SessionsResource {
     return this.http.get<Record<string, unknown>>('/api/agent-sdk/status')
   }
 
+  providers() {
+    return this.http.get<Array<{ provider: string; available: boolean; cliInstalled: boolean; defaultModel: string | null }>>('/api/agent-sdk/providers')
+  }
+
   interrupt(id: string) {
     return this.http.post<{ ok: boolean }>(`/api/agent-sdk/sessions/${id}/interrupt`)
   }
@@ -63,6 +67,29 @@ export class SessionsResource {
 
   accountInfo(id: string) {
     return this.http.get<Record<string, unknown>>(`/api/agent-sdk/sessions/${id}/account-info`)
+  }
+
+  /** SDK 0.2.86+: Live context window usage breakdown (running Claude sessions only) */
+  contextUsage(id: string) {
+    return this.http.get<{ categories: Array<{ name: string; tokens: number; color?: string; isDeferred?: boolean }>; totalTokens: number }>(
+      `/api/agent-sdk/sessions/${id}/context-usage`,
+    )
+  }
+
+  /** SDK 0.2.89+: List subagent IDs from a Claude session transcript */
+  subagents(id: string) {
+    return this.http.get<string[]>(`/api/agent-sdk/sessions/${id}/subagents`)
+  }
+
+  /** SDK 0.2.89+: Get messages for a specific subagent within a session */
+  subagentMessages(id: string, agentId: string, params?: { limit?: number; offset?: number }) {
+    const qs = new URLSearchParams()
+    if (params?.limit != null) qs.set('limit', String(params.limit))
+    if (params?.offset != null) qs.set('offset', String(params.offset))
+    const q = qs.toString()
+    return this.http.get<Array<Record<string, unknown>>>(
+      `/api/agent-sdk/sessions/${id}/subagents/${encodeURIComponent(agentId)}/messages${q ? `?${q}` : ''}`,
+    )
   }
 
   mcpServers(projectDir?: string) {

@@ -7,6 +7,7 @@ export interface AgentDefinition {
   name: string
   description: string | null
   model: string | null
+  provider: string | null
   tools: string[]
   maxTurns: number | null
   permissionMode: string | null
@@ -59,6 +60,7 @@ export function discoverAgents(): AgentDefinition[] {
         name: (meta.name as string) ?? id,
         description: (meta.description as string) ?? null,
         model: (meta.model as string) ?? null,
+        provider: (meta.provider as string) ?? null,
         tools: Array.isArray(meta.tools) ? meta.tools as string[] : [],
         maxTurns: typeof meta.maxTurns === 'number' ? meta.maxTurns : null,
         permissionMode: (meta.permissionMode as string) ?? null,
@@ -83,6 +85,7 @@ export function getAgent(id: string): AgentDefinition | null {
       name: (meta.name as string) ?? id,
       description: (meta.description as string) ?? null,
       model: (meta.model as string) ?? null,
+      provider: (meta.provider as string) ?? null,
       tools: Array.isArray(meta.tools) ? meta.tools as string[] : [],
       maxTurns: typeof meta.maxTurns === 'number' ? meta.maxTurns : null,
       permissionMode: (meta.permissionMode as string) ?? null,
